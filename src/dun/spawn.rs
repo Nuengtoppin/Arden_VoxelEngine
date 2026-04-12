@@ -3,11 +3,9 @@ use bevy::prelude::*;
 use bevy_rapier3d::prelude::*;
 
 use crate::voxel::grid::VoxelGrid;
-use crate::voxel::mesher::VOXEL_SIZE;
 use crate::render::mesh_builder::build_bevy_mesh;
 
 use crate::physics::collider_builder::{
-    collider_from_mesh,
     collider_from_voxel_grid_box,
 };
 

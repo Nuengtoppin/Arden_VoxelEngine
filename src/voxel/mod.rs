@@ -1,5 +1,7 @@
 // src/voxel/mod.rs
-pub mod grid;
-pub mod mesher;
 
-pub use grid::{VoxelGrid, VOXELS_PER_AXIS};
+pub mod constants;
+pub mod grid;
+
+pub use constants::VOXEL_SIZE;
+pub use grid::VoxelGrid;

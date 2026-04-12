@@ -4,7 +4,7 @@ use bevy::render::mesh::{Indices, VertexAttributeValues};
 use bevy_rapier3d::prelude::*;
 
 use crate::voxel::grid::VoxelGrid;
-use crate::voxel::mesher::VOXEL_SIZE;
+use crate::voxel::VOXEL_SIZE;
 
 pub fn collider_from_mesh(mesh: &Mesh) -> Collider {
     let positions: Vec<Vec3> = match mesh.attribute(Mesh::ATTRIBUTE_POSITION) {
