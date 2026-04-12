@@ -11,6 +11,7 @@ default-run = "arden"
 bevy = { version = "=0.13.2", default-features = true }
 bevy_egui = "=0.25.0"
 bevy-inspector-egui = "=0.23.4"
+bevy_rapier3d = { version = "0.26.0", features = ["debug-render-3d"] }
 serde = { version = "1.0", features = ["derive"] }
 ron = "0.8"
 anyhow = "1.0"
