@@ -2,7 +2,8 @@
 use bevy::prelude::*;
 use bevy_rapier3d::prelude::*;
 
-use crate::voxel::grid::VoxelGrid;
+use crate::core::VoxelGrid;
+use crate::core::topology::VOXEL_SIZE;
 use crate::render::mesh_builder::build_bevy_mesh;
 
 use crate::physics::collider_builder::{
@@ -16,7 +17,7 @@ use crate::dun::kind::DunKind;
 /// Это и есть "наполнение" DUN для MVP.
 fn build_dun_sphere_grid() -> VoxelGrid {
     // 32³ по умолчанию
-    let mut grid = VoxelGrid::new_default();
+    let mut grid = VoxelGrid::new_dun_default();
     let size = grid.size;
 
     // Центр в воксельных координатах (по центрам ячеек)
@@ -91,7 +92,7 @@ pub fn spawn_single_dun(
             transform,
             ..default()
         },
-        RigidBody::Dynamic,
+        RigidBody::Fixed,
         collider,
         Dun {
             kind: DunKind::DynamicVoxel,

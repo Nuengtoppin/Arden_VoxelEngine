@@ -3,8 +3,8 @@ use bevy::prelude::*;
 use bevy::render::mesh::{Indices, PrimitiveTopology};
 use bevy::render::render_asset::RenderAssetUsages;
 
-use crate::voxel::grid::VoxelGrid;
-use crate::voxel::VOXEL_SIZE;
+use crate::core::VoxelGrid;
+use crate::core::topology::VOXEL_SIZE;
 
 /// Строим "кубический" меш из вокселей.
 /// - центрируем вокруг (0,0,0);

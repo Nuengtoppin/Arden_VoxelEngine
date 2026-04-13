@@ -3,23 +3,24 @@ use bevy::prelude::*;
 use bevy::input::ButtonInput;
 use bevy::input::keyboard::KeyCode;
 
-use crate::app::setup::{setup_camera_and_light, spawn_aquarium};
-use crate::tools::debug_grid::debug_grid_system;
+use crate::app::setup::setup_camera_and_light;
+// use crate::app::setup::spawn_aquarium;
+// use crate::tools::debug_grid::debug_grid_system;
 use crate::tools::camera_controller::{fly_camera_look, fly_camera_move};
 use crate::dun::spawn::spawn_single_dun;
 
-pub struct Mvp0ScenePlugin;
+pub struct LabScenePlugin;
 
-impl Plugin for Mvp0ScenePlugin {
+impl Plugin for LabScenePlugin {
     fn build(&self, app: &mut App) {
         app
-            // Один раз: камера + свет + аквариум
-            .add_systems(Startup, (setup_camera_and_light, spawn_aquarium))
+            // Один раз: камера + свет
+            .add_systems(Startup, (setup_camera_and_light, ))
             // Каждый кадр: сетка, управление камерой, спавн DUN по E
             .add_systems(
                 Update,
                 (
-                    debug_grid_system,
+                    //debug_grid_system,
                     fly_camera_look,
                     fly_camera_move,
                     spawn_dun_on_e,

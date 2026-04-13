@@ -2,9 +2,8 @@
 use bevy::prelude::*;
 
 use crate::dun::kind::DunKind;
-use crate::voxel::grid::VoxelGrid;
-
-/// Базовый компонент DUN для MVP0.
+use crate::core::VoxelGrid;
+/// Базовый компонент DUN
 /// Хранит только то, что реально нужно сейчас.
 #[derive(Component)]
 pub struct Dun {

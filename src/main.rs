@@ -2,8 +2,9 @@
 use bevy::prelude::*;
 use bevy_rapier3d::prelude::*;
 
+mod core;
 mod app;
-mod mvp0;
+mod lab;
 mod tools;
 mod voxel;
 mod render;
@@ -18,6 +19,6 @@ fn main() {
         // Визуализация коллайдеров (можно закомментировать при желании)
         .add_plugins(RapierDebugRenderPlugin::default())
         // Наша сцена MVP0
-        .add_plugins(mvp0::scene::Mvp0ScenePlugin)
+        .add_plugins(lab::scene::LabScenePlugin)
         .run();
 }
