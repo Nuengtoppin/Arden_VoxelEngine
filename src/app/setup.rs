@@ -1,7 +1,6 @@
 // src/app/setup.rs
 use bevy::prelude::*;
 use bevy_rapier3d::prelude::*;
-use crate::physics::collider_builder::collider_from_mesh;
 use crate::tools::camera_controller::FlyCamera;
 
 
