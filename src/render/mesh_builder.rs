@@ -3,8 +3,8 @@ use bevy::prelude::*;
 use bevy::render::mesh::{Indices, PrimitiveTopology};
 use bevy::render::render_asset::RenderAssetUsages;
 
-use crate::core::VoxelGrid;
 use crate::core::topology::VOXEL_SIZE;
+use crate::core::VoxelGrid;
 
 /// Строим "кубический" меш из вокселей.
 /// - центрируем вокруг (0,0,0);
@@ -21,9 +21,9 @@ pub fn build_bevy_mesh(grid: &VoxelGrid) -> Mesh {
     let center = extent * 0.5;
 
     let mut positions: Vec<[f32; 3]> = Vec::new();
-    let mut normals:   Vec<[f32; 3]> = Vec::new();
-    let mut uvs:       Vec<[f32; 2]> = Vec::new();
-    let mut indices:   Vec<u32>      = Vec::new();
+    let mut normals: Vec<[f32; 3]> = Vec::new();
+    let mut uvs: Vec<[f32; 2]> = Vec::new();
+    let mut indices: Vec<u32> = Vec::new();
 
     // Хелпер: добавляет одну квадратную грань (2 треугольника).
     // ВЕРШИНЫ в порядке CCW (если смотреть С НАРУЖИ на грань).
@@ -37,20 +37,14 @@ pub fn build_bevy_mesh(grid: &VoxelGrid) -> Mesh {
             uvs.push([0.0, 0.0]);
         }
 
-        indices.extend_from_slice(&[
-            base,     base + 1, base + 2,
-            base,     base + 2, base + 3,
-        ]);
+        indices.extend_from_slice(&[base, base + 1, base + 2, base, base + 2, base + 3]);
     };
 
     // Сосед пустой, если:
     // - вне границ грида
     // - или воксель = 0
     let is_empty = |x: i32, y: i32, z: i32| -> bool {
-        if x < 0 || y < 0 || z < 0 ||
-           x >= size.x as i32 ||
-           y >= size.y as i32 ||
-           z >= size.z as i32
+        if x < 0 || y < 0 || z < 0 || x >= size.x as i32 || y >= size.y as i32 || z >= size.z as i32
         {
             return true;
         }
@@ -168,12 +162,14 @@ pub fn build_bevy_mesh(grid: &VoxelGrid) -> Mesh {
                         -Vec3::Z,
                     );
                 }
-
             }
         }
     }
 
-    let mut mesh = Mesh::new(PrimitiveTopology::TriangleList, RenderAssetUsages::default());
+    let mut mesh = Mesh::new(
+        PrimitiveTopology::TriangleList,
+        RenderAssetUsages::default(),
+    );
     mesh.insert_attribute(Mesh::ATTRIBUTE_POSITION, positions);
     mesh.insert_attribute(Mesh::ATTRIBUTE_NORMAL, normals);
     mesh.insert_attribute(Mesh::ATTRIBUTE_UV_0, uvs);

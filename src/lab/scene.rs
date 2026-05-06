@@ -1,81 +1,73 @@
-// src/mvp0/scene.rs
 use bevy::prelude::*;
-use bevy::input::ButtonInput;
-use bevy::input::keyboard::KeyCode;
 
 use crate::app::setup::setup_camera_and_light;
-// use crate::app::setup::spawn_aquarium;
-// use crate::tools::debug_grid::debug_grid_system;
-use crate::tools::camera_controller::{fly_camera_look, fly_camera_move};
-use crate::dun::spawn::spawn_single_dun;
+use crate::lab::clipboard::{apply_clipboard_actions, LabClipboard};
+use crate::lab::gizmos::draw_lab_gizmos;
+use crate::lab::hud::draw_lab_hud;
+
+use crate::lab::object::{
+    apply_object_actions,
+    apply_object_bake_actions,
+    apply_object_move_actions,
+    apply_object_orientation_actions,
+    apply_object_registry_actions,
+    LabObjectRegistry,
+};
+
+use crate::lab::probe::{
+    adjust_inspect_probe_distance, update_lab_probe, InspectProbeSettings, LabProbeState,
+};
+use crate::lab::sandbox::{enforce_lab_mode_policy, LabSandboxState};
+use crate::lab::save::{apply_save_load_actions, LabSaveStatus};
+use crate::lab::selection::{update_select_box_skeleton, SelectionBoxState};
+use crate::lab::volume::{apply_selection_volume_actions, VolumeDirtyQueue};
+use crate::lab::world::{apply_lab_tool_actions, LabVoxelWorld};
+use crate::tools::camera_controller::{fly_camera_dolly_wheel, fly_camera_look, fly_camera_move};
+use crate::tools::debug::{handle_debug_input, DebugInputMap, DebugUiState};
 
 pub struct LabScenePlugin;
 
 impl Plugin for LabScenePlugin {
     fn build(&self, app: &mut App) {
-        app
-            // Один раз: камера + свет
-            .add_systems(Startup, (setup_camera_and_light, ))
-            // Каждый кадр: сетка, управление камерой, спавн DUN по E
+        app.init_resource::<LabProbeState>()
+            .init_resource::<InspectProbeSettings>()
+            .init_resource::<LabSandboxState>()
+            .init_resource::<LabVoxelWorld>()
+            .init_resource::<SelectionBoxState>()
+            .init_resource::<VolumeDirtyQueue>()
+            .init_resource::<LabClipboard>()
+            .init_resource::<LabObjectRegistry>()
+            .init_resource::<LabSaveStatus>()
+            .init_resource::<DebugUiState>()
+            .init_resource::<DebugInputMap>()
+            .add_systems(Startup, (setup_camera_and_light,))
             .add_systems(
                 Update,
                 (
-                    //debug_grid_system,
+                    handle_debug_input,
+                    enforce_lab_mode_policy.after(handle_debug_input),
+                    adjust_inspect_probe_distance.after(enforce_lab_mode_policy),
+                    fly_camera_dolly_wheel,
                     fly_camera_look,
                     fly_camera_move,
-                    spawn_dun_on_e,
+                    update_lab_probe
+                        .after(enforce_lab_mode_policy)
+                        .after(fly_camera_dolly_wheel)
+                        .after(fly_camera_look)
+                        .after(fly_camera_move),
+                    update_select_box_skeleton.after(update_lab_probe),
+                    apply_lab_tool_actions.after(update_select_box_skeleton),
+                    apply_selection_volume_actions.after(apply_lab_tool_actions),
+                    apply_clipboard_actions.after(apply_selection_volume_actions),
+                    apply_object_actions.after(apply_clipboard_actions),
+                    apply_object_move_actions.after(apply_object_actions),
+                    apply_object_bake_actions.after(apply_object_move_actions),
+                    apply_object_orientation_actions.after(apply_object_actions),
+                    apply_object_registry_actions.after(apply_object_actions),
+                    apply_save_load_actions.after(apply_object_actions),
+                    draw_lab_hud.after(apply_save_load_actions),
+                    draw_lab_gizmos.after(apply_object_actions),
                 ),
             );
     }
-}
-
-/// Временная система для MVP0:
-/// по нажатию E спавним один DUN в направлении камеры,
-/// с привязкой к сетке (шаг 16 world units).
-fn spawn_dun_on_e(
-    keyboard: Res<ButtonInput<KeyCode>>,
-    mut commands: Commands,
-    mut meshes: ResMut<Assets<Mesh>>,
-    mut materials: ResMut<Assets<StandardMaterial>>,
-    camera_q: Query<&Transform, With<Camera3d>>,
-) {
-    if !keyboard.just_pressed(KeyCode::KeyE) {
-        return;
-    }
-
-    // Берём единственную 3D-камеру
-    let Ok(cam_transform) = camera_q.get_single() else {
-        return;
-    };
-
-    // Вектор взгляда камеры.
-    // В Bevy по умолчанию камера смотрит вдоль -Z,
-    // поэтому forward = rotation * (-Z).
-    let forward = cam_transform.rotation * -Vec3::Z;
-
-    // На каком расстоянии от камеры спавнить DUN (в мире, не в вокселях).
-    // 32.0 ≈ "два контейнера вперёд" при VOXEL_SIZE=1.0 и size=32.
-    let spawn_distance = 32.0;
-
-    let raw_pos = cam_transform.translation + forward.normalize() * spawn_distance;
-
-    // Привязка к сетке. Можно поменять шаг на 32.0, если хочешь
-    // сразу снаппить по размеру контейнера DUN.
-    let grid_step = 16.0;
-
-    let snapped = Vec3::new(
-        (raw_pos.x / grid_step).round() * grid_step,
-        (raw_pos.y / grid_step).round() * grid_step,
-        (raw_pos.z / grid_step).round() * grid_step,
-    );
-
-    let spawn_transform = Transform::from_translation(snapped);
-
-    // Вызываем конструктор DUN: он сам строит шар и коллайдер по мешу.
-    spawn_single_dun(
-        &mut commands,
-        &mut meshes,
-        &mut materials,
-        spawn_transform,
-    );
 }
