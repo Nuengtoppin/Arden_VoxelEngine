@@ -6,6 +6,9 @@ Cargo.lock
 **/*.rs.bk
 rustfmt.toml
 
+/saves/*.ron
+/src_dump.txt
+
 # ============================
 # Bevy / Game Assets
 # ============================
@@ -28,7 +31,7 @@ rustfmt.toml
 *.o
 
 # ============================
-# WASM (если будешь собирать)
+# WASM
 # ============================
 wasm-pack.log
 pkg/

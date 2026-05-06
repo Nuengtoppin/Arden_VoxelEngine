@@ -1,87 +1,273 @@
-**Document Status:** 🔬 Review
-**Version:** 0.2.0
-**Maintainer:** Nuengtoppin
-**Reviewed by:** —
-**Last update:** 2025-12-05
+**Document Status:** 🧩 Draft  
+**Version:** 0.3.0  
+**Maintainer:** Nuengtoppin  
+**Reviewed by:** —  
+**Last update:** 2026-05-07  
 
 ---
 
-# 🧩 **Arden Engine — MVP Structure**
+# 🧩 Arden Engine — MVP Structure
 
 ## 🎯 Назначение
 
-Этот документ описывает **структуру и последовательность MVP-этапов** проекта **Arden Engine**.
-Каждый MVP (Minimum Viable Prototype) — это автономный эксперимент,
-проверяющий один или несколько ключевых принципов архитектуры:
-топологию, маршрутизацию, динамические контейнеры (DUN), EQ-Core и симуляционные подсистемы.
+Этот документ описывает общую структуру MVP-направления проекта **Arden Engine**.
 
-Документ связывает:
+MVP в контексте Arden Engine — это не финальный релиз и не строгая календарная сборка.  
+Это технический слой проверки архитектуры, кода и исследовательских гипотез.
 
-* технические спецификации MVP;
-* исходники;
-* сборки и артефакты `/builds/MVP_xx/`
+Документ нужен, чтобы зафиксировать:
 
----
+- общий порядок MVP-слоёв;
+- связь между Roadmap, кодовой базой и документацией;
+- статус текущего rebuild;
+- исторические MVP-прототипы;
+- будущие направления развития.
 
-## 🧱 Цели раздела
+Подробное описание текущего состояния `src` вынесено в:
 
-* зафиксировать **последовательность MVP-версий** и их задачи;
-* определить **критерии тестирования и стабильности**;
-* поддерживать **связь между кодом, документацией и сборками**;
-* использовать документ как **внутреннюю дорожную карту развития ядра**.
+[`MVP_Current_Rebuild.md`](./MVP_Current_Rebuild.md)
 
 ---
 
-## 🧩 MVP 0.0 — *Single DUN Prototype*
+## 🧭 Текущая логика MVP
 
-| Поле            | Значение                                                                       |
-| --------------- | ------------------------------------------------------------------------------ |
-| **Дата сборки** | 2025-11-25                                                                     |
-| **Версия**      | 0.0.1                                                                          |
-| **Статус**      | 🧪 Stable-Test                                                                       |
-| **Исходники**   | [`/src/mvp0`](../../src/mvp0/)                                                 |
-| **Документ ТЗ** | [`MVP_0.1.md`](./MVP_0.1.md) (раздел MVP 0.0)                                  |
-| **Описание**    | Один DUN (32³) с неровной поверхностью + один динамический шар (physics check) |
-| **Комментарий** | Демонстрация физического контакта по surface-mesh, без кубового bounding box   |
+После пересмотра порядка разработки активный путь MVP больше не строится от DUN-first прототипа.
 
-### 🧭 Критерии готовности
+Новый порядок:
 
-* Сцена: камера, свет, пол (mesh + Fixed collider).
-* Один DUN из `VoxelGrid`.
-* Collider строится по mesh (треугольная поверхность).
-* Шар катится по поверхности, а не отскакивает от куба.
+```text
+Spatial Truth -> Pre-DUN Lab Sandbox -> DUN Stage -> EQ/HAOS
+````
+
+Это значит:
+
+* сначала фиксируется пространственная истина;
+* затем собирается управляемая pre-DUN voxel sandbox;
+* затем вводится DUN как следующий runtime/container-слой;
+* после этого можно переходить к EQ / HAOS / runtime orchestration.
 
 ---
 
-## 🧩 MVP 0.1 — *Topology Stress Test*
+## 🕯 MVP 0 — Historical DUN Prototype
 
-| Поле              | Значение                                                                      |
-| ----------------- | ----------------------------------------------------------------------------- |
-| **Дата сборки**   | 2025-12-10                                                                    |
-| **Версия**        | 0.1.0                                                                         |
-| **Статус**        | 🧪 Stable-Test                                                               |
-| **Исходники**     | [`/src/mvp0`](../../src/mvp0/)                                                |
-| **Сборка (.exe)** | [`/builds/MVP_0.1/Arden_MVP_0.1.exe`](../../builds/MVP_0.1/Arden_MVP_0.1.exe) |
-| **Документ ТЗ**   | [`MVP_0.1.md`](./MVP_0.1.md) (раздел MVP 0.1)                                 |
-| **Описание**      | Стресс-тест с 20–50 DUN и отображением FPS/UI                                 |
-| **Комментарий**   | FPS 80–120, утечек нет, маршруты валидны                                      |
+**Status:** historical reference / to be archived later
+**Document:** [`MVP_0.1.md`](./MVP_0.1.md)
 
-### 🧭 Критерии готовности
+### Purpose
 
-* UI-панель с кнопкой `Spawn N DUN`.
-* Одновременный спавн 20–50 Dynamic DUN.
-* Коллизии между DUN и полом.
-* UI показывает счётчики и FPS.
-* Debug-grid отмечает границы чанков (32 units).
+Ранний DUN-first прототип для проверки идеи:
+
+```text
+VoxelGrid -> Surface Mesh -> Collider / Physics check
+```
+
+### Included
+
+* Single DUN Prototype;
+* Dynamic DUN stress test;
+* surface mesh collider;
+* шар / physics check;
+* первичная проверка связи voxel grid → mesh → collider.
+
+### Comment
+
+Этот MVP сохраняется как исторический слой проекта.
+
+Он больше не является активной основой разработки, потому что текущая архитектура требует сначала закрепить:
+
+* spatial truth;
+* address / mapping layer;
+* finite lab sandbox;
+* volume operation backend.
+
+DUN возвращается позже как отдельный stage поверх этой основы.
+
+---
+
+## 🧩 MVP Current Rebuild
+
+**Status:** 🧩 Draft / Active
+**Document:** [`MVP_Current_Rebuild.md`](./MVP_Current_Rebuild.md)
+
+### Purpose
+
+Зафиксировать текущий общий rebuild кодовой базы и документации после перехода от DUN-first MVP0 к новой последовательности:
+
+```text
+Spatial Truth -> Pre-DUN Lab Sandbox -> DUN Stage -> EQ/HAOS
+```
+
+### Includes
+
+Текущий rebuild описывает первые два рабочих слоя:
+
+```text
+Step 1 — Spatial Truth Foundation
+Step 2 — Pre-DUN Finite Lab Sandbox
+```
+
+А также оставляет место для следующего прохода:
+
+```text
+Step 3 — DUN Stage
+```
+
+### Comment
+
+`MVP_Current_Rebuild.md` не является финальной спецификацией.
+Это техническая карта текущего состояния `src`, где фиксируется:
+
+* что уже собрано;
+* зачем это было добавлено;
+* какие части являются опорными;
+* какие части временные или сырые;
+* что будет дорабатываться позже.
+
+---
+
+## 🧩 MVP 1 — Spatial Truth Foundation
+
+**Status:** Draft / active base
+**Detailed document:** later, if needed
+
+### Purpose
+
+Закрепить пространственную истину движка.
+
+### Includes
+
+* topology layer;
+* `Region`;
+* `Chunk`;
+* `Octochunk`;
+* `Voxel`;
+* `RuntimePosition`;
+* `DensityKey`;
+* `SimSectorKey`;
+* `FullRoute`;
+* world/runtime/address mapping;
+* debug/probe/HUD/gizmos visibility.
+
+### Result
+
+Движок получает проверяемый spatial truth слой, который можно читать через runtime tools, HUD и gizmos.
+
+---
+
+## 🧩 MVP 2 — Pre-DUN Finite Lab Sandbox
+
+**Status:** Draft / active
+**Detailed document:** later, if needed
+
+### Purpose
+
+Создать конечную voxel-песочницу до перехода к DUN.
+
+### Includes
+
+* finite lab world profile;
+* Edit / Runtime mode;
+* chunk-backed voxel storage;
+* Paint / Erase;
+* SelectBox;
+* Fill / Delete volume;
+* Clipboard copy/paste;
+* lab save/load snapshot;
+* volume operation backend;
+* temporary lab render path.
+
+### Result
+
+Проект получает управляемую sandbox-среду для проверки voxel editing, selection workflows, payload operations и будущей подготовки к DUN.
+
+---
+
+## 🧩 MVP 3 — DUN Stage
+
+**Status:** planned / next rebuild pass
+**Detailed document:** later
+
+### Purpose
+
+Ввести DUN как слой поверх уже работающей spatial truth и lab sandbox.
+
+### Planned
+
+* DUN lens contract;
+* Static DUN;
+* Dynamic DUN;
+* route anchor;
+* runtime transform bridge;
+* generated mesh/collider pipeline;
+* DUN documentation refresh.
+
+### Result
+
+DUN становится не первым фундаментом MVP, а следующим runtime/container-слоем поверх проверенной spatial architecture.
+
+---
+
+## 🧩 MVP 4 — EQ / HAOS / Runtime Orchestration
+
+**Status:** planned
+
+### Purpose
+
+Подготовить runtime-оркестрацию, оптимизацию и симуляционные правила.
+
+### Planned
+
+* EQ-Core / EQ-Sim boundary;
+* DTO activity/sleep logic;
+* HAOS optimization layer;
+* rebuild scheduling;
+* collider/mesh rebuild policy;
+* event/intent pipeline;
+* future streaming and LOD hooks.
+
+---
+
+## 🧩 MVP 5 — Stable Research Build
+
+**Status:** planned
+
+### Purpose
+
+Подготовить Arden Engine к открытым R&D-экспериментам, демонстрации и дальнейшему open-collab развитию.
+
+### Planned
+
+* стабилизация core/lab/runtime layers;
+* публично читаемая документация;
+* RU/EN sync;
+* cleaned examples;
+* demo scene;
+* contribution/license readiness.
+
+---
+
+## 🧰 Current TODO
+
+* Дочистить `MVP_Current_Rebuild.md` по текущему состоянию `src`.
+* После текущего среза добавить описание Step 3 / DUN Stage.
+* Позже пометить `MVP_0.1.md` как historical / archived.
+* Синхронизировать `meta/log_2026.md`.
+* Позже обновить `meta/RU/project_status.md`.
+* Позже обновить `meta/status_index.md`.
+* Провести portal/link cleanup отдельным проходом.
+* Позже обновить Concept и EN-документы.
 
 ---
 
 ## 📘 Связанные материалы
-[📚 Вернуться к дорожной карте](../roadmap.md)  
 
-[🧾 Панель управления проектом (Meta)](../../../meta/RU/README.md)  
+[📄 MVP Current Rebuild](./MVP_Current_Rebuild.md)
 
-[⚙ Глоссарий Терминов](../TERMS/Glossary.md)
+[📚 Вернуться к дорожной карте](../roadmap.md)
+
+[🧾 Панель управления проектом / Meta](../../../meta/RU/README.md)
+
+[⚙ Глоссарий терминов](../TERMS/Glossary.md)
 
 ---
 

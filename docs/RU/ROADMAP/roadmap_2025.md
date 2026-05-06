@@ -1,7 +1,7 @@
 **Document Status:** 🔬 Review
-**Version:** 0.3.0
+**Version:** 0.4.0
 **Maintainer:** Nuengtoppin
-**Last update:** 2025-12-05
+**Last update:** 2026-05-07
 
 ---
 
@@ -17,96 +17,159 @@
 
 ---
 
-## 🧩 **Этап 0 — Исследовательская база (R&D Foundation)**
+## 🧩 Phase 0 — Research Foundation
 
-**Цель:** проверить математические принципы и топологическую модель мира.
+**Цель:**  
+проверить базовые идеи топологии, координат, маршрутизации и voxel/DUN-модели до активной реализации.
 
 **Содержание:**
 
-* проверка координат, индексов, вложенности (Topology / Route / Rotation);
-* мини-тесты на Python / C++ / Rust;
-* разработка первых схем и понятий ядра;
-* верификация модели Region-Block-Chunk-Voxel.
+- первые схемы Region / Chunk / Voxel;
+- эксперименты с координатами и вложенностью;
+- первичная формулировка DUN, EQ, HAOS и Route;
+- проверка идеи hybrid voxel + mesh approach.
 
-**Результат:**
-топологическая модель и адресная структура подтверждены.
+**Результат:**  
+проект получил первичный архитектурный язык и набор рабочих гипотез.
 
 ---
 
-## 🧩 **Этап 1 — Документационный фундамент**
+## 🧩 Phase 1 — Documentation and Repository Foundation
 
-**Цель:** создать единое описание ядра.
+**Цель:**  
+собрать базовую структуру репозитория и зафиксировать основные архитектурные документы.
 
 **Содержание:**
 
-* разработка документации RU/EN;
-* фиксация архитектуры EQ / DUN / HAOS / BUS;
-* создание Meta-системы (`/meta`);
-* настройка базовой структуры репозитория и лицензий.
+- RU/EN documentation portal;
+- Concept / Architecture / Terms;
+- Topology / Routing / Rotation triad;
+- DUN documentation draft;
+- Meta/status system;
+- licenses, README and repository structure.
 
-**Результат:**
-документация синхронизирована, структура проекта стабильна.
+**Результат:**  
+проект получил документационный фундамент и основу для дальнейшего R&D-развития.
 
 ---
 
-## 🧩 **Этап 2 — MVP-ядро (Rust + Bevy)**
+## 🧩 Phase 2 — Spatial Truth + Pre-DUN Lab Sandbox
 
-**Цель:** собрать первый минимальный прототип.
+**Цель:**  
+собрать стабильную пространственную основу движка и конечную voxel-песочницу до перехода к DUN.
 
 **Содержание:**
 
-* реализация MVP 0.0–0.1 (DUN, topology stress test);
-* генерация чанков и триангуляция;
-* первичный рендер и collider-физика;
-* вывод UI-панели (FPS, debug-grid).
+- активный spatial core:
+  - `Region`;
+  - `Chunk`;
+  - `Octochunk`;
+  - `Voxel`;
+- runtime bridge:
+  - `RuntimePosition = Region + LocalFloat`;
+- адресные формы:
+  - `DensityKey`;
+  - `SimSectorKey`;
+  - `FullRoute`;
+- mapping pipeline:
+  - world position → runtime position;
+  - runtime position → density key;
+  - runtime position → full route;
+- debug/probe слой:
+  - camera probe;
+  - inspect under crosshair;
+  - pinned target;
+  - machine/human notation;
+- layered gizmos:
+  - Region;
+  - Sector;
+  - Chunk;
+  - Octochunk;
+  - Voxel;
+  - Selection;
+- finite lab sandbox:
+  - `LabWorldProfile`;
+  - Edit / Runtime mode;
+  - `LabVoxelWorld`;
+  - Paint / Erase;
+  - SelectBox;
+  - Fill / Delete volume;
+  - Clipboard copy/paste;
+  - save/load snapshot;
+- volume operation backend:
+  - operation intent;
+  - chunk-aware planning;
+  - octochunk refine;
+  - voxel frontier;
+  - dirty/rebuild queue.
 
-**Результат:**
-прототип показывает устойчивую симуляцию и живую геометрию.
+**Результат:**  
+проект получает управляемую pre-DUN песочницу, где можно проверять spatial truth, voxel editing, volume operations, payload workflows и будущую подготовку к DUN.
+
+## 🧩 Phase 3 — DUN Stage
+
+**Цель:**  
+ввести DUN как слой поверх уже работающей spatial truth и lab sandbox.
+
+**Содержание:**
+
+- обновление DUN-документации под актуальный MVP-канон;
+- DUN lens contract;
+- Static DUN preparation;
+- route anchor + runtime transform bridge;
+- generated mesh/collider pipeline;
+- подготовка перехода к Dynamic DUN.
+
+**Результат:**  
+DUN становится не первым фундаментом проекта, а следующим уровнем поверх проверенной topology/mapping/lab-основы.
+
+## 🧩 Phase 4 — EQ / HAOS / Runtime Orchestration
+
+**Цель:**  
+перейти от lab sandbox к более явной системе runtime-оркестрации.
+
+**Содержание:**
+
+- EQ-Core / EQ-Sim boundary;
+- DTO activity/sleep policy;
+- HAOS optimization layer;
+- dirty/rebuild queues;
+- runtime events and system coordination;
+- preparation for streaming, LOD and simulation scheduling.
+
+**Результат:**  
+движок получает основу для управляемой симуляции, оптимизации и будущей runtime-архитектуры.
 
 ---
 
-## 🧩 **Этап 3 — Упрощённое ядро (Arden Core v0.3)**
+## 🧩 Phase 5 — Stable Research Build
 
-**Цель:** перейти от эксперимента к упорядоченной архитектуре.
-
-**Содержание:**
-
-* EQ-Core (tick-система, DTO, HAOS draft);
-* BUS-координатор и event-потоки;
-* базовая ECS-интеграция (Bevy 0.13+);
-* подготовка публичного демо и инструментов разработчика.
-
-**Результат:**
-всё ядро компонуется и может использоваться для R&D-экспериментов.
-
----
-
-## 🧩 **Этап 4 — Arden Engine 1.0 (Stable Research Build)**
-
-**Цель:** стабилизация, публикация и подготовка к open-collab.
+**Цель:**  
+подготовить Arden Engine к открытым R&D-экспериментам и публикации.
 
 **Содержание:**
 
-* оптимизация HAOS и EQ-Core;
-* улучшенная генерация и триангуляция;
-* графический пайплайн и UI-инструменты;
-* открытая документация и сайт проекта;
-* финализация лицензий и портала `docs/EN`.
+- стабилизация core/lab/runtime layers;
+- обновление RU/EN documentation;
+- cleanup examples and public-facing docs;
+- preparation of demo scenes;
+- license and contribution flow validation.
 
-**Результат:**
-Arden Engine готов к открытым R&D-экспериментам и публикации.
+**Результат:**  
+Arden Engine готов к открытым R&D-экспериментам, демонстрации и дальнейшему open-collab развитию.
 
 ---
 
 ## 🔗 **Связанные документы**
 
-| Раздел            | Файл                                                          |
-| ----------------- | ------------------------------------------------------------- |
-| 🧱 Статус проекта | [`meta/project_status.md`](../../meta/project_status.md)      |
-| 🧩 Структура MVP  | [`docs/RU/MVP/MVP_Structure.md`](../MVP/MVP_Structure.md)     |
-| 📚 Архитектура    | [`docs/RU/ARCHITECTURE/readme.md`](../ARCHITECTURE/readme.md) |
-| ⚙ Meta-панель     | [`meta/README.md`](../../../meta/RU/README.md)                |
-
+| Раздел | Файл |
+| ------ | ---- |
+| 🧱 Статус проекта | [`meta/RU/project_status.md`](../../../meta/RU/project_status.md) |
+| 🧩 Структура MVP | [`docs/RU/MVP/MVP_Structure.md`](../MVP/MVP_Structure.md) |
+| 📚 Архитектура | [`docs/RU/ARCHITECTURE/readme.md`](../ARCHITECTURE/readme.md) |
+| 📘 Концепт | [`docs/RU/CONCEPT/Concept_Overview.md`](../CONCEPT/Concept_Overview.md) |
+| ⚙ Meta-панель | [`meta/RU/README.md`](../../../meta/RU/README.md) |
+| 🧾 Status Index | [`meta/status_index.md`](../../../meta/status_index.md) |
 ---
 
 [📚 Вернуться к дорожной карте](../roadmap.md)  

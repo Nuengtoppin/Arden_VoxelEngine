@@ -1,4 +1,4 @@
-**Document Status:** 🔬 Review  
+**Document Status:** 🕯 archived  
 **Version:** 0.1.0  
 **Maintainer:** Nuengtoppin  
 **Reviewed by:** —  
