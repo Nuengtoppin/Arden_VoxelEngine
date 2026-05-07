@@ -1,985 +1,1005 @@
+**Document Status:** 🔬 Review  
+**Version:** 0.2.0  
+**Maintainer:** Nuengtoppin  
+**Reviewed by:** —  
+**Last update:** 2025-11-20
 
 ---
 
-# 0. Обзор / mini-README
+[📚 Back](./README.md)
 
-Этот раздел вводит фундаментальную сущность **DUN (Dynamic Unit Node)** —  
-первую динамическую единицу мира, построенную поверх  
-**Topology → Routing → Rotation** (1_TopologyLogic_Route_Rotation) сокращенно (1.х)
+[🧱 Project Architecture Portal](../../ARCHITECTURE/readme.md)  
 
-DUN связывает:
 
-- строгую статичную топологию мира,
-- адресацию Route,
-- runtime-позицию и ориентацию (float + quaternion),
-- локальную геометрию (воксели, SVO, меши),
-- состояния активности (ACTIVE / DORMANT / ARCHIVED).
+# 0. Overview / mini-README
 
-Документ фиксирует **базовые инварианты** DUN и правила, которые позволят:
+This section introduces the fundamental entity **DUN (Dynamic Unit Node)** —  
+the first dynamic world unit built on top of  
+**Topology → Routing → Rotation** (`1_TopologyLogic_Route_Rotation`, shortened as `1.x`).
 
-- вращать контейнеры на 360°, не ломая топологию,
-- хранить локальную воксельную структуру безопасно,
-- строить физику и рендер на поверхности,
-- правильно связать Route и float-пространство.
+DUN connects:
 
-Раздел **не описывает** EQ, HAOS, DTO или игровой цикл —  
-этим будут посвящены документы 3.x (EQ / Simulation Layer).
+- the strict static topology of the world,
+- Route addressing,
+- runtime position and orientation (`float + quaternion`),
+- local geometry (`voxels, SVO, meshes`),
+- activity states (`ACTIVE / DORMANT / ARCHIVED`).
 
----
+This document defines the **basic DUN invariants** and rules that will allow the project to:
 
-### 0.1. Стратегия документа
+- rotate containers through 360° without breaking topology,
+- safely store local voxel structure,
+- build physics and rendering on the surface representation,
+- correctly connect Route and float-space.
 
-Раздел 2.x создаёт **мост между статичным миром (1.x)** и будущими динамическими подсистемами (3.x).
-
-На первом этапе задача документа:
-
-1) Чётко определить, что такое DUN  
-2) Зафиксировать инварианты (что он делает и чего не делает)  
-3) Определить Static vs Dynamic DUN  
-4) Описать модель якорения:  
-   **Topology → Route → Float → Transform**  
-5) Объяснить, что вращается, а что остаётся статичным  
-6) Определить, где живут воксели и где живут меши  
-7) Обозначить место DUN в общем порядке архитектуры
-
-В этом документе **нет логики симуляции, сна, пробуждения или сетевого стриминга** —  
-это придёт позже в EQ-Core, EQ-Sim и HAOS.
+This section **does not describe** EQ, HAOS, DTO, or the gameplay loop —  
+those will be covered by the `3.x` documents (`EQ / Simulation Layer`).
 
 ---
 
-# 1. Назначение и роль DUN
+### 0.1. Document strategy
 
-## 1.1. Определение
+Section `2.x` creates a **bridge between the static world (`1.x`)** and future dynamic subsystems (`3.x`).
 
-**DUN (Dynamic Unit Node)** — это атомарный узел динамического мира, который объединяет:
+At the first stage, the purpose of this document is to:
 
-- привязку к топологии (**Route → дискретный адрес**),
-- runtime-трансформацию (**позиция + quaternion**),
-- локальную геометрию (**воксели → mesh / SVO**),
-- базовое состояние активности (ACTIVE / DORMANT / ARCHIVED).
+1. Clearly define what DUN is  
+2. Define invariants — what it does and what it does not do  
+3. Define Static vs Dynamic DUN  
+4. Describe the anchoring model:  
+   **Topology → LogicalAnchor → RuntimePosition → Transform**  
+5. Explain what rotates and what remains static  
+6. Define where voxels live and where meshes live  
+7. Define DUN’s place in the general architecture order
 
-DUN — это **не контейнер топологии**, а надстройка над ней.  
-Он существует в динамическом пространстве, но опирается на строгие правила триады (1.х)
-Он НЕ изменяет ни размеры контейнеров, 
-ни страйды, ни маршрутизацию, ни ротацию в топологии.
+This document contains **no simulation, sleep, wake-up, or network streaming logic** —  
+that will come later in EQ-Core, EQ-Sim, and HAOS.
 
-DUN вводит только динамику: transform, float, mesh, collider, состояния.
+---
+
+# 1. Purpose and role of DUN
+
+## 1.1. Definition
+
+**DUN (Dynamic Unit Node)** is an atomic node of the dynamic world that combines:
+
+- a topology binding (**Route → discrete address**),
+- runtime transformation (**position + quaternion**),
+- local geometry (**voxels → mesh / SVO**),
+- a basic activity state (`ACTIVE / DORMANT / ARCHIVED`).
+
+DUN is **not a topology container**, but a layer above topology.  
+It exists in dynamic space, but relies on the strict rules of the `1.x` triad.  
+It does **not** change container sizes, strides, routing, or topology rotation.
+
+DUN only introduces dynamics: transform, float-space, mesh, collider, and states.
 
 ## 1.2. Static DUN vs Dynamic DUN
-DUN поддерживает два эксплуатационных режима: **Static** и **Dynamic**.  
-Оба режима используют одну и ту же внутреннюю структуру,  
-но отличаются поведением transform, ротацией, участием в симуляции и правилами хранения.
+
+DUN supports two operational modes: **Static** and **Dynamic**.  
+Both modes use the same internal structure,  
+but differ in transform behavior, rotation, simulation participation, and storage rules.
 
 ---
 
-### **Static DUN (режим статического узла)**
+### **Static DUN**
 
-Static DUN — это DUN, который представляет **неподвижный участок мира**,  
-логически равный топологическому контейнеру (Chunk / Subchunk / Octochunk).
+Static DUN is a DUN that represents a **non-moving part of the world**,  
+logically equal to a topological container or a consistent container volume  
+(`Chunk / Octochunk / combinations of them according to active topology strides`).
 
-Static DUN служит **динамической оболочкой вокруг статической топологии**.  
-Он НЕ перемещается и НЕ вращается плавно, но имеет минимальную динамику (state, mesh rebuild),  
-и полностью синхронизирован с триадой Topology → Routing → Rotation.
+Static DUN acts as a **dynamic wrapper around static topology**.  
+It does not move and does not rotate smoothly, but it still has minimal dynamics  
+(state, mesh rebuild) and is fully synchronized with the triad  
+`Topology → Routing → Rotation`.
 
-## 1.3. Область ответственности DUN
+## 1.3. DUN responsibility area
 
-Важно отделять то, **чем DUN является**, от того, **что он делает**.
+It is important to separate **what DUN is** from **what DUN does**.
 
-DUN описывает:
+DUN describes:
 
-- привязку к топологии (Route),
-- своё положение и ориентацию (Transform),
-- локальный объём (DunVolume),
-- поверхность и коллайдеры (DunSurface),
-- ограничивающие объёмы (DunBounds),
-- текущее состояние участия в мире (DunState).
+- binding to topology (`Route`),
+- its position and orientation (`Transform`),
+- local volume (`DunVolume`),
+- surface and colliders (`DunSurface`),
+- bounding volumes (`DunBounds`),
+- current participation state in the world (`DunState`).
 
-При этом DUN **не**:
+At the same time, DUN does **not**:
 
-- тикает сам себя и не содержит логики игрового цикла;
-- не решает, когда быть Active / Dormant / Archived;
-- не управляет логированием, профайлингом или стримингом;
-- не знает о DTO, HAOS или EQ-алгоритмах.
+- tick itself and does not contain gameplay loop logic;
+- decide when it should be Active / Dormant / Archived;
+- manage logging, profiling, or streaming;
+- know about DTO, HAOS, or EQ algorithms.
 
-Эти задачи лежат на подсистемах:
+These responsibilities belong to subsystems:
 
-- **EQ-Core / EQ-Sim** — хранение, тик, симуляция;
-- **HAOS / DTO** — оптимизация, сон/пробуждение, архивирование.
+- **EQ-Core / EQ-Sim** — storage, ticking, simulation;
+- **HAOS / DTO** — optimization, sleep/wake-up, archiving.
 
-DUN остаётся **прозрачным узлом данных и привязки**, поверх которого уже работают системы симуляции и оптимизаций.
+DUN remains a **transparent data and anchoring node** on top of which simulation and optimization systems operate.
 
 ---
 
-#### **1. Static-Transform**
+#### **1. Static Transform**
 
-```
-
-position: фиксирована topological_origin(Route)
-rotation: дискретная (0/90/180/270°)
+```text
+position: derived from logical anchor / container origin
+rotation: discrete (0/90/180/270°)
 scale: 1.0
-
 ```
 
-Static DUN получает позицию только из Route → decode(Route)  
-и не имеет собственных float-смещений.
+Static DUN receives its position from a logical anchor  
+(usually `DensityKey` or `FullRoute`, if a deeper binding is needed)  
+and does not have its own float offsets.
 
-Ротация возможна только через Rotation Layer (дискретно),  
-без quaternion и без непрерывных углов.
+Rotation is possible only through the Rotation Layer, discretely,  
+without quaternion and without continuous angles.
 
 ---
 
-#### **2. Static-Geometry**
+#### **2. Static Geometry**
 
+```text
+voxel_grid: always available
+svo_tree: optional (for LOD)
+mesh[]: generated, but not rotated by a dynamic transform
+aabb_local: constant
+obb_world: same as AABB
 ```
 
-voxel_grid: доступен всегда
-svo_tree: опционально (для LOD)
-mesh[]: генерируется, но не вращается dynamic-transform'ом
-aabb_local: постоянный
-obb_world: совпадает с AABB
-
-```
-
-Static DUN никогда не имеет OBB под углом.  
-Он всегда axis-aligned.
+Static DUN never has an angled OBB.  
+It is always axis-aligned.
 
 ---
 
-#### **3. Static-Simulation Role**
-```
+#### **3. Static Simulation Role**
 
-simulate_physics: false (кроме внутренних проверок)
+```text
+simulate_physics: false (except internal checks)
 dynamic_move: false
 dynamic_rotate: false
-tick_rate: минимальный (зависит от HAOS/DTO)
-
+tick_rate: minimal (depends on HAOS/DTO)
 ```
 
-Static DUN участвует в симуляции как:
-- носитель вокселей,
-- источник мешей,
-- участник стриминга мира,
-- объект, который может “засыпать/просыпаться”.
+Static DUN participates in simulation as:
 
-Он НЕ участвует в физике как тело.
+- a voxel carrier,
+- a mesh source,
+- a world streaming participant,
+- an object that may “sleep” or “wake up”.
+
+It does **not** participate in physics as a body.
 
 ---
 
-#### **4. Static-State Rules**
-```
+#### **4. Static State Rules**
 
-ACTIVE:   когда обновляется меш, генерация, загрузка
-DORMANT:  основное состояние (почти всегда)
-ARCHIVED: может быть выгружен частично/полностью
-TEMP:     при стриминге чанков
-
+```text
+ACTIVE:   when mesh, generation, or loading is updated
+DORMANT:  default state (almost always)
+ARCHIVED: may be partially or fully unloaded
+TEMP:     during chunk streaming
 ```
 
 ---
 
 #### **5. Static Invariants**
-1. Static DUN **никогда не двигается** в float-пространстве.  
-2. Rotation только через **Rotation Layer (дискретно)**.  
-3. Контейнер полностью соответствует топологическому размеру.  
-4. Collider Static DUN — это **axis-aligned mesh collider**.  
-5. Static DUN — основа **всего мира**, но не субъект движения.
+
+1. Static DUN **never moves** in float-space.  
+2. Rotation only goes through the **Rotation Layer**, discretely.  
+3. The container fully matches its topological size.  
+4. The Static DUN collider is an **axis-aligned mesh collider**.  
+5. Static DUN is the foundation of **the whole world**, but not a moving subject.
 
 ---
 
-### **Dynamic DUN (режим динамического узла)**
+### **Dynamic DUN**
 
-Dynamic DUN — это DUN, который является **подвижным физическим объектом**:  
-модулем, кораблём, платформой, элементом конструкции, техникой, NPC-структурой —  
-всем, что должно:
+Dynamic DUN is a DUN that is a **movable physical object**:  
+a module, ship, platform, structural element, vehicle, NPC structure —  
+anything that must:
 
-- двигаться,
-- плавно вращаться,
-- участвовать в физике,
-- иметь локальную воксельную структуру,  
-- иметь собственный transform и поведение.
+- move,
+- rotate smoothly,
+- participate in physics,
+- have a local voxel structure,
+- have its own transform and behavior.
 
-Dynamic DUN — это **мир внутри мира** (mini-world, мини-топология).
-
----
-
-#### **1. Dynamic-Transform**
-```
-
-position: Vec3 (плавное движение)
-rotation: Quat (плавное вращение)
-scale: Vec3 (обычно 1.0)
-
-```
-
-Именно Dynamic DUN получает:
-
-- полноценную float-позицию,
-- quaternion,
-- мировую OBB,
-- динамическое тело физики.
+Dynamic DUN is a **world inside the world** (`mini-world`, local topology).
 
 ---
 
-#### **2. Dynamic-Geometry**
+#### **1. Dynamic Transform**
+
+```text
+position: Vec3 (smooth movement)
+rotation: Quat (smooth rotation)
+scale: Vec3 (usually 1.0)
 ```
 
-voxel_grid / svo_tree: локальная топология
-mesh[]: вращается и двигается вместе с transform
-aabb_local: axis-aligned в локальном пространстве DUN
-obb_world: полный Oriented Bounding Box
+Dynamic DUN receives:
 
-```
-
-Тут ключевое отличие:
-
-- **воксельная сетка НЕ вращается** (инвариант),
-- **меш вращается полностью** (surface representation).
-
-Это обеспечивает:
-- стабильность страйдов,
-- чистоту индексации,
-- корректную физику.
+- full float position,
+- quaternion rotation,
+- world OBB,
+- a dynamic physics body.
 
 ---
 
-#### **3. Dynamic-Simulation Role**
+#### **2. Dynamic Geometry**
+
+```text
+voxel_grid / svo_tree: local topology
+mesh[]: rotates and moves together with the transform
+aabb_local: axis-aligned in local DUN space
+obb_world: full Oriented Bounding Box
 ```
 
+The key difference:
+
+- **the voxel grid does NOT rotate** — invariant;
+- **the mesh rotates as a whole** — surface representation.
+
+This provides:
+
+- stable strides,
+- clean indexing,
+- correct physics.
+
+---
+
+#### **3. Dynamic Simulation Role**
+
+```text
 simulate_physics: true
 dynamic_move: true
 dynamic_rotate: true
-tick_rate: зависит от EQ-Sim
-
+tick_rate: depends on EQ-Sim
 ```
 
-Dynamic DUN участвует в симуляции как:
+Dynamic DUN participates in simulation as:
 
-- физический объект,
-- источник перемещающейся поверхности,
-- контейнер для динамической геометрии,
-- участник бустов/LOD/SVO внутри HAOS.
+- a physical object,
+- a source of a moving surface,
+- a container for dynamic geometry,
+- a participant in boosts / LOD / SVO inside HAOS.
 
 ---
 
-#### **4. Dynamic-State Rules**
-```
+#### **4. Dynamic State Rules**
 
-ACTIVE:   в движении, в физике, под тиком
-DORMANT:  спит, если объект неподвижен долго
-ARCHIVED: может быть упакован в blueprint/snapshot
-TEMP:     при появлении в мире
-
+```text
+ACTIVE:   moving, in physics, being ticked
+DORMANT:  asleep if the object has been stationary for a long time
+ARCHIVED: may be packed into a blueprint/snapshot
+TEMP:     when appearing in the world
 ```
 
 ---
 
 #### **5. Dynamic Invariants**
-1. Dynamic DUN может иметь **любую позицию** в мировых float-координатах.  
-2. Rotation — **не ограничена** дискретной сеткой (используется quaternion).  
-3. Воксели остаются осевыми, mesh — вращается.  
-4. Dynamic DUN **имеет физическое тело (rigidbody)**.  
-5. Dynamic DUN может перемежать топологические зоны (пересекать границы чанков).  
-6. Route остаётся логическим якорем, но transform — runtime-источник истины.
+
+1. Dynamic DUN may have **any position** in world float coordinates.  
+2. Rotation is **not limited** to the discrete grid — quaternion is used.  
+3. Voxels remain axis-aligned; the mesh rotates.  
+4. Dynamic DUN **has a physical body / rigidbody**.  
+5. Dynamic DUN may cross topological zones and chunk boundaries.  
+6. LogicalAnchor remains a Core-side binding,  
+   while `RuntimePosition + Transform` become the live source of truth for movement.
 
 ---
 
-#### **6. Отличия Static vs Dynamic DUN — инженерная сводка**
+#### **6. Static vs Dynamic DUN — engineering summary**
 
-| Свойство | Static DUN | Dynamic DUN |
+| Property | Static DUN | Dynamic DUN |
 |---------|-------------|--------------|
-| Позиция | От Route (фикс) | Float (Vec3), свободная |
-| Ротация | Дискретная 0/90/180/270 | Quaternion 0–360° |
-| Collider | Axis-aligned | Oriented (rotate with object) |
-| Воксели | Постоянны | Постоянны |
-| Mesh | Не вращается | Вращается |
-| Физика | Нет тела | Есть тело |
-| Tick | Почти не тикнет | Полный тик |
-| Использование | Мир | Подвижные объекты |
+| Position | Derived from logical anchor | Float (`Vec3`), free |
+| Rotation | Discrete 0/90/180/270 | Quaternion 0–360° |
+| Collider | Axis-aligned | Oriented, rotates with object |
+| Voxels | Constant | Constant |
+| Mesh | Does not rotate | Rotates |
+| Physics | No body | Has body |
+| Tick | Almost no ticking | Full tick |
+| Usage | World | Movable objects |
 | AABB | = OBB | ≠ OBB |
-| Состояния | ACTIVE/DORM/ARCH | ACTIVE/DORM/ARCH |
+| States | ACTIVE/DORM/ARCH | ACTIVE/DORM/ARCH |
 
 ---
 
-### **Почему оба режима — часть одного DUN**
+### **Why both modes are part of one DUN**
 
-Static и Dynamic — это **режимы эксплуатации**, а не два разных типа сущности.
+Static and Dynamic are **operational modes**, not two different entity types.
 
-Они используют:
+They use:
 
-- одинаковую структуру хранения,  
-- одинаковые инварианты топологии,  
-- одинаковый anchor-механизм (Route → Float → Transform),  
-- одинаковый AABB/mesh-пайплайн,  
-- одинаковую связь с EQ-Core/Sim.
+- the same storage structure,
+- the same topology invariants,
+- the same anchor mechanism (`LogicalAnchor → RuntimePosition → Transform`),
+- the same AABB/mesh pipeline,
+- the same connection to EQ-Core/EQ-Sim.
 
-Различия только в поведении transform.
+The only difference is transform behavior.
 
-Это позволяет:
+This allows the project to have:
 
-- иметь единый формат данных,  
-- единый pipeline генерации мешей,  
-- единый механизм сна/пробуждения,  
-- единый интерфейс для рендера, физики и стриминга.
-
----
-
-# 2. Инварианты DUN 
-
-Чтобы DUN не ломал логику пространства, вводятся жёсткие инварианты.  
-Они задают, что DUN имеет право делать, а чего делать не может.
+- one data format,
+- one mesh generation pipeline,
+- one sleep/wake-up mechanism,
+- one interface for rendering, physics, and streaming.
 
 ---
 
-## 2.1. DUN не изменяет топологию
+# 2. DUN invariants
+
+Strict invariants are introduced so that DUN does not break spatial logic.  
+They define what DUN is allowed to do and what it cannot do.
+
+---
+
+## 2.1. DUN does not change topology
 
 DUN:
 
-- не меняет страйды уровней (Region/Block/Chunk/Octo и т.п.);
-- не меняет размеры контейнеров;
-- не нарушает формулы адресации (encode/decode Route).
+- does not change the strides of active topology levels (`Region / Chunk / Octochunk / Voxel`);
+- does not change container sizes;
+- does not break the formulas of addressing and transformations in the active address model.
 
-Топология мира, описанная в документах 1.x, остаётся неизменным фундаментом.  
-DUN накладывается поверх неё и не требует никаких “особых” контейнеров или адресов.
+The world topology described in the `1.x` documents remains an unchanged foundation.  
+DUN is layered on top of it and does not require any “special” containers or addresses.
 
 ---
 
-## 2.2. DUN не вращает воксельную решётку
+## 2.2. DUN does not rotate the voxel grid
 
-Локальная воксельная сетка DUN всегда **axis-aligned**:
+The local voxel grid of a DUN is always **axis-aligned**:
 
 ```text
 (local_x, local_y, local_z) ∈ [0..Nx) × [0..Ny) × [0..Nz)
 ```
 
-* внутри DUN не существует “повёрнутого grid’а”;
-* SVO / voxel grid живут в собственной осевой системе координат;
-* любое вращение выполняется поверх этого слоя, а не за счёт изменения индексов.
+- there is no “rotated grid” inside DUN;
+- SVO / voxel grid live in their own axis-aligned coordinate system;
+- any rotation is applied above this layer, not by changing indices.
 
-Это сохраняет простую индексацию, корректную работу SVO/LOD и предсказуемость для EQ.
+This preserves simple indexing, correct SVO/LOD behavior, and predictability for EQ.
 
 ---
 
-## 2.3. DUN вращается целиком как transform
+## 2.3. DUN rotates as a whole through transform
 
-Ротация DUN реализуется через его transform:
+DUN rotation is implemented through its transform:
 
 ```rust
 struct DunTransform {
     position: Vec3,
     rotation: Quat,
-    scale: Vec3, // обычно (1,1,1)
+    scale: Vec3, // usually (1,1,1)
 }
 ```
 
-* вращается весь узел целиком (mesh, OBB, визуальное представление);
-* внутренние индексы и структура вокселей при этом не меняются.
+- the whole node rotates as one unit: mesh, OBB, visual representation;
+- internal indices and voxel structure do not change.
 
-Для **Static DUN** rotation может быть ограничен дискретными значениями (0/90/180/270°).
-Для **Dynamic DUN** допускается полный quaternion (0–360°).
-
----
-
-## 2.4. Физика и ходьба происходят по mesh, а не по raw-вокселям
-
-Базовый принцип:
-
-* воксели → описывают материал/плотность;
-* surface mesh → описывает поверхность и используется для коллизий.
-
-Пайплайн:
-
-1. Внутри DUN хранится voxel grid / SVO (материал, разрушения, LOD).
-2. Из этого объёма строится surface mesh (triangles).
-3. Для физики и ходьбы используется mesh или производный collider, а не прямой обход по каждому вокселю.
-
-Это избавляет от “ступенчатых” коллизий, держит физику в классической треугольной/примитивной форме
-и оставляет воксельное представление внутренним, служебным уровнем.
+For **Static DUN**, rotation may be limited to discrete values (`0/90/180/270°`).  
+For **Dynamic DUN**, a full quaternion is allowed (`0–360°`).
 
 ---
 
-## 2.5. AABB — локальный, OBB — мировой
+## 2.4. Physics and walking happen on mesh, not raw voxels
 
-DUN всегда содержит два типа ограничивающих объёмов:
+Basic principle:
 
-* **локальный AABB** — в координатах DUN, axis-aligned;
-* **мировой OBB** — результат применения `DunTransform` к локальному объёму.
+- voxels describe material/density;
+- surface mesh describes the surface and is used for collisions.
 
-Локальный AABB:
+Pipeline:
 
-* используется HAOS/DTO и простыми алгоритмами;
-* не зависит от rotation.
+1. Inside DUN, a voxel grid / SVO is stored (material, destruction, LOD).
+2. A surface mesh is built from this volume (triangles).
+3. Physics and walking use the mesh or a derived collider, not direct iteration over every voxel.
 
-Мировой OBB:
-
-* отражает реальную форму DUN в мире;
-* используется физикой и точными проверками пересечений.
-
----
-
-## 2.6. Route всегда остаётся логическим адресом DUN
-
-У DUN всегда есть два взаимодополняющих описания положения:
-
-* **Route** — где DUN “живёт” в топологии (Region/Block/Chunk/…);
-* **Transform/position** — где DUN находится в float-пространстве в данный момент.
-
-Инвариант:
-
-* Route остаётся каноническим логическим адресом DUN;
-* Transform не изменяет Route и не требует особых типов адресации.
-
-Это позволяет:
-
-* привязывать сохранения/стриминг к топологической сетке, а не к произвольным float;
-* группировать DUN по регионам мира;
-* хранить DUN в EQ-Core в тех же иерархиях, что и остальной мир.
+This avoids “stair-step” collisions, keeps physics in a classic triangular/primitive form,  
+and leaves voxel representation as an internal service layer.
 
 ---
 
-## 2.7. Содержимое DUN может меняться, размеры — нет
+## 2.5. AABB is local, OBB is world-space
 
-DUN — это контейнер **фиксированного объёма**, заданного при его создании.
+DUN always contains two types of bounding volumes:
 
-Под фиксированным объёмом понимается:
+- **local AABB** — in DUN coordinates, axis-aligned;
+- **world OBB** — the result of applying `DunTransform` to the local volume.
 
-- фиксированное количество ячеек локальной решётки (Nx × Ny × Nz вокселей),
-- фиксированная привязка этого объёма к мировым страйдам
-  (например, 1 Chunk, 1 Octochunk, 2 Chunks столбом, группа Octochunks и т.п.).
+Local AABB:
 
-Разрешено:
+- is used by HAOS/DTO and simple algorithms;
+- does not depend on rotation.
 
-- менять воксели внутри (разрушать, добавлять, изменять материалы);
-- обновлять SVO / density / локальные данные;
-- проектировать разные типы DUN с разными фиксированными размерами
-  (по одному чанку, по два чанка, loose-узлы и т.д.).
+World OBB:
 
-Запрещено:
-
-- динамически изменять размеры уже существующего DUN
-  (делать “особый” DUN другого размера на лету);
-- “растягивать” или “сжимать” DUN за пределы его исходного объёма.
-
-Если для задачи нужен другой размер (например, вместо 1 Chunk использовать 2 Chunks столбом),
-создаётся **другой тип или экземпляр DUN** с собственной топологической привязкой и параметрами объёма.
-
-### Размер DUN и топологические страйды
-
-Инвариант “фиксированный объём DUN” **не означает**, что каждый DUN обязан быть
-строго равен одному Chunk или Octochunk.
-
-Архитектура допускает разные **классы DUN**, размер которых задаётся при проектировании:
-
-- `DUN_Chunk` — один Chunk (например, 64×64×64 вокселей);
-- `DUN_Octo` — один Octochunk (например, 32×32×32);
-- `DUN_2Chunks_Vert` — два чанка столбом (например, 64×128×64);
-- `DUN_4Octos_Tile` — плитка из 2×2 Octochunks по горизонтали;
-- `DUN_LooseNode` — крупный loose-узел (например, 256×256×256) поверх нескольких базовых контейнеров.
-
-Общие правила:
-
-- размер **конкретного экземпляра DUN** выбирается при его создании  
-  и остаётся неизменным на всём жизненном цикле;
-- размеры DUN должны быть согласованы с топологией  
-  (опираться на страйды базовых контейнеров: Chunk/Octo/Block/Region,  
-  либо на их целочисленные комбинации);
-- крупные структуры (корабли, здания, большие платформы) собираются **из нескольких DUN**,
-  как из плиток, а не за счёт динамического “растягивания” одного DUN.
-
-Таким образом:
-
-- DUN остаётся **контейнером фиксированного объёма** на уровне экземпляра;
-- при этом система остаётся гибкой — можно проектировать библиотеку разных типов DUN,
-  адаптированных под нужные страйды, loose-узлы и схемы использования.
+- reflects the real shape of DUN in the world;
+- is used by physics and precise intersection checks.
 
 ---
 
-## 2.8. Итог: зачем нужны инварианты DUN
+## 2.6. LogicalAnchor remains the logical DUN binding
 
-Инварианты DUN гарантируют, что эта сущность:
+DUN has two complementary descriptions of position:
 
-* **добавляет динамику поверх** триады *Topology / Routing / Rotation*, не изменяя её правил;
-* остаётся **совместимой с long-term сохранениями и стримингом** (Route и топология стабильны во времени);
-* даёт **чистую базу для физики и mesh-слоя** (коллизия и ходьба идут по surface mesh, а не по raw-вокселям);
-* может использоваться в подсистемах **EQ-Core / EQ-Sim / HAOS** без специальных “особых случаев”;
-* остаётся **простой и однозначной для других разработчиков**: явно видно, что именно делает DUN и чего он делать не может.
+- **LogicalAnchor** — where DUN is logically attached in the discrete world;
+- **RuntimePosition / Transform** — where DUN currently is in runtime space.
 
----
+For Static DUN, `LogicalAnchor` and runtime position usually almost match.
 
-# 3. Anchor Model  
+For Dynamic DUN, `LogicalAnchor` remains the Core-side binding,  
+while `RuntimePosition + Transform` becomes the live source of truth for movement.
 
-### Topology → Route → Float → Transform
+This allows the engine to:
 
-DUN одновременно существует в четырёх слоях описания пространства:
-
-1. **Topology Space** — дискретная топология мира  
-2. **Route Space** — канонический адрес DUN в этой топологии  
-3. **Float Space** — непрерывные координаты (runtime-позиция)  
-4. **Transform Space** — полный transform (позиция + ротация + масштаб)
-
-Anchor Model описывает, **как именно DUN “пришит” ко всем этим слоям одновременно**,  
-и какие из них являются “твёрдым фундаментом”, а какие — динамикой поверх него.
+- store and stream DUN through a stable address model;
+- avoid forcing dynamic runtime to constantly live on a full deep address;
+- extract `FullRoute` or other forms only on demand.
 
 ---
 
-## 3.1. Topology Space (дискретное пространство)
+## 2.7. DUN content may change, size may not
 
-Топология мира (раздел 1.x) задаёт дискретную структуру:
+DUN is a **fixed-volume container**, defined at creation time.
 
-> Region → Block → Chunk → Octochunk → Subchunk → Voxel
+Fixed volume means:
 
-Она определяет:
+- a fixed number of local grid cells (`Nx × Ny × Nz` voxels),
+- a fixed binding of this volume to world strides  
+  (for example: 1 Chunk, 1 Octochunk, 2 Chunks stacked vertically, a group of Octochunks, and so on).
 
-- глобальное разбиение мира на контейнеры,
-- границы и размеры каждого уровня,
-- страйды и схемы индексации (в том числе Morton/flat),
-- encode/decode формулы между индексами и координатами.
+Allowed:
 
-**DUN не меняет Topology Space.**  
-Он лишь **ссылается** на уже существующие топологические сущности через Route.
+- changing voxels inside it — destruction, adding voxels, changing materials;
+- updating SVO / density / local data;
+- designing different DUN types with different fixed sizes  
+  (one chunk, two chunks, loose nodes, and so on).
+
+Forbidden:
+
+- dynamically changing the size of an existing DUN  
+  (creating a “special” DUN of a different size on the fly);
+- “stretching” or “shrinking” a DUN beyond its original volume.
+
+If a task needs another size — for example, using 2 stacked Chunks instead of 1 Chunk —  
+another DUN type or instance is created with its own topological binding and volume parameters.
+
+### DUN size and topology strides
+
+The “fixed DUN volume” invariant **does not mean** that every DUN must be  
+strictly equal to one Chunk or one Octochunk.
+
+The architecture allows different **DUN classes**, whose size is defined at design time:
+
+- `DUN_Chunk` — one Chunk, for example `64×64×64` voxels;
+- `DUN_Octo` — one Octochunk, for example `32×32×32`;
+- `DUN_2Chunks_Vert` — two stacked Chunks, for example `64×128×64`;
+- `DUN_4Octos_Tile` — a horizontal `2×2` Octochunk tile;
+- `DUN_LooseNode` — a large loose node, for example `256×256×256`, above several base containers.
+
+General rules:
+
+- the size of a **specific DUN instance** is chosen at creation time  
+  and remains unchanged throughout its lifecycle;
+- DUN sizes must be consistent with topology  
+  (based on base container strides: `Chunk / Octochunk / Region`,  
+  or their integer combinations);
+- large structures — ships, buildings, large platforms — are assembled **from multiple DUNs**  
+  like tiles, not by dynamically “stretching” one DUN.
+
+Thus:
+
+- DUN remains a **fixed-volume container** at the instance level;
+- the system remains flexible — a library of different DUN types can be designed,
+  adapted to required strides, loose nodes, and usage patterns.
 
 ---
 
-## 3.2. Route Space (адрес)
+## 2.8. Summary: why DUN invariants are needed
 
-**Route** — канонический дискретный адрес DUN в мире.  
-Он указывает, к какому участку топологии DUN относится:
+DUN invariants guarantee that this entity:
 
-```text
-Region / Block / Chunk / Octochunk / ... / [LocalIndex]
-```
-
-Route определяет:
-
-* логическую принадлежность DUN миру,
-* положение в дереве контейнеров (какой Region/Block/Chunk “родной”),
-* точку “прикрепления” к топологии, с которой работают
-  **EQ-Core**, стриминг и системы хранения.
-
-При этом:
-
-* Route **не хранит float-координаты**,
-* Route **не описывает ротацию**,
-* Route — это **дискретный идентификатор**, а не transform.
+- **adds dynamics on top of** the `Topology / Routing / Rotation` triad without changing its rules;
+- remains **compatible with long-term saves and streaming** — logical anchor and topology are stable over time;
+- gives a **clean foundation for physics and the mesh layer** — collision and walking happen on surface mesh, not on raw voxels;
+- can be used by **EQ-Core / EQ-Sim / HAOS** without special cases;
+- remains **simple and unambiguous for other developers**: it is clear what DUN does and what it cannot do.
 
 ---
 
-## 3.3. Float Space (runtime-позиция)
+# 3. Anchor Model
 
-Для работы физики, камеры, рендера и симуляции DUN имеет
-**непрерывное (float) положение в мировом пространстве**:
+### Topology → LogicalAnchor → RuntimePosition → Transform
+
+DUN exists simultaneously in four layers of spatial description:
+
+1. **Topology Space** — discrete topology of the world  
+2. **LogicalAnchor Space** — canonical DUN address in this topology  
+3. **RuntimePosition Space** — continuous coordinates / runtime position  
+4. **Transform Space** — full transform: position + rotation + scale
+
+Anchor Model describes **how DUN is attached to all these layers at the same time**,  
+and which of them are the “solid foundation” while others are dynamic layers above it.
+
+---
+
+## 3.1. Topology Space — discrete space
+
+World topology (`1.x`) defines the discrete structure:
+
+> Region → Chunk → Octochunk → Voxel
+
+It defines:
+
+- global subdivision of the world into containers,
+- boundaries and sizes of each level,
+- strides and indexing schemes, including Morton / flat,
+- encode/decode formulas between indices and coordinates.
+
+**DUN does not change Topology Space.**  
+It only **references** already existing topological entities through a logical anchor.
+
+---
+
+## 3.2. LogicalAnchor Space — address
+
+LogicalAnchor is the discrete binding of DUN in the active address model.
+
+Depending on mode and task, the logical anchor can be:
+
+- `DensityKey`
+- `FullRoute`
+- persistent container-aligned address
+
+`SimSectorKey` is usually a derived coarse form,  
+not the main DUN anchor.
+
+LogicalAnchor defines:
+
+- DUN’s logical membership in the world;
+- its Core-side binding to the container structure;
+- the entry point for EQ-Core, saves, and streaming.
+
+At the same time, logical anchor:
+
+- **does not store runtime-float position**;
+- **does not describe rotation**;
+- remains a **discrete binding identifier**, not a transform state.
+
+---
+
+## 3.3. RuntimePosition Space — runtime position
+
+For physics, camera, render, and simulation, DUN has a  
+**continuous float position in world space**:
 
 ```rust
 position: Vec3
 ```
 
-Эта позиция:
+This position:
 
-* используется физическим движком (rigidbody, коллизии),
-* используется рендером (мировая матрица для мешей),
-* используется логикой симуляции (типы DUN, расстояния, триггеры).
+- is used by the physics engine — rigidbody, collisions;
+- is used by rendering — world matrix for meshes;
+- is used by simulation logic — DUN types, distances, triggers.
 
-При этом:
+At the same time:
 
-* изменение `position` **не меняет Route**,
-* Topology/Route остаются базовой “картой мира”,
-* Float Space — это **runtime-проекция** DUN в непрерывном мире.
+- changing `RuntimePosition` does not have to change `LogicalAnchor`;
+- Topology/Routing remain the base discrete “map of the world”;
+- RuntimePosition Space is a **live runtime projection** of DUN above this map.
 
 ---
 
-## 3.4. Transform Space (позиция + кватернион + масштаб)
+## 3.4. Transform Space — position + quaternion + scale
 
-Полный transform DUN описывается структурой:
+The full DUN transform is described by:
 
 ```rust
 struct DunTransform {
-    position: Vec3,  // мировая позиция опорной точки DUN
-    rotation: Quat,  // ориентация DUN (полный диапазон 0–360°)
-    scale: Vec3,     // обычно (1.0, 1.0, 1.0)
+    position: Vec3,  // world position of the DUN anchor point
+    rotation: Quat,  // DUN orientation, full 0–360° range
+    scale: Vec3,     // usually (1.0, 1.0, 1.0)
 }
 ```
 
-Transform Space определяет:
+Transform Space defines:
 
-* **мировую OBB** DUN (через position + rotation),
-* ориентацию и положение **surface-mesh’ей**,
-* расположение **physics-collider’ов**,
-* ротацию Dynamic DUN относительно мира.
+- DUN’s **world OBB**, through position + rotation;
+- orientation and position of **surface meshes**;
+- location of **physics colliders**;
+- rotation of Dynamic DUN relative to the world.
 
-Для Static DUN:
+For Static DUN:
 
-* `position` жёстко следует из Route (origin контейнера),
-* `rotation` обычно ограничен дискретными значениями (0/90/180/270°)
-  и может быть выражен через Rotation Layer.
+- `position` strictly follows from the logical anchor — container origin;
+- `rotation` is usually limited to discrete values (`0/90/180/270°`)
+  and can be expressed through the Rotation Layer.
 
-Для Dynamic DUN:
+For Dynamic DUN:
 
-* `position` свободно меняется во времени (Vec3),
-* `rotation` — полноценный quaternion (анимация, физика, свободное вращение).
+- `position` freely changes over time (`Vec3`);
+- `rotation` is a full quaternion — animation, physics, free rotation.
 
-Transform **никогда не изменяет топологию** и **не влияет на Route**,
-он только описывает, как DUN “сидит” в float-мире поверх дискретной структуры.
+Transform **never changes topology** and **does not affect logical anchor**.  
+It only describes how DUN “sits” in the float-world above the discrete structure.
 
 ---
 
-## 3.5. Связь между слоями (концептуально)
+## 3.5. Relationship between layers — conceptually
 
-Для любого DUN можно мыслить цепочку:
+For any DUN, the chain can be understood as:
 
 ```text
-Topology Space  ──►  Route Space  ──►  Float Space  ──►  Transform Space
-(структура мира)    (адрес DUN)       (позиция)         (позиция+ротация)
+Topology Space  ──►  LogicalAnchor Space  ──►  RuntimePosition Space  ──►  Transform Space
+(world structure)    (Core-side binding)    (live address form)       (position+rotation)
 ```
 
-* Topology даёт **каркас** мира.
-* Route определяет, **к какому месту каркаса** привязан DUN.
-* Float-позиция задаёт **фактическое местоположение** DUN в мире.
-* Transform добавляет **ротацию и масштаб** для рендера и физики.
+- Topology gives the **framework** of the world.
+- LogicalAnchor defines **which place in the framework** DUN is bound to.
+- RuntimePosition defines DUN’s **live address position** in the world.
+- Transform adds **rotation and scale** for render and physics.
 
-В дальнейших документах (EQ-Core, EQ-Sim, HAOS) эта модель будет использоваться
-как базовый “язык”, на котором описываются все операции над DUN
-(стриминг, симуляция, оптимизации, сохранения).
+In future documents (`EQ-Core`, `EQ-Sim`, `HAOS`), this model will be used  
+as the base “language” for all DUN operations — streaming, simulation, optimization, saves.
 
-## 3.6. Итог: зачем нужен Anchor Model
+## 3.6. Summary: why Anchor Model is needed
 
-Anchor Model фиксирует, как DUN одновременно привязан к четырём слоям описания мира:
+Anchor Model defines how DUN is simultaneously bound to four world description layers:
 
-- **Topology Space** — задаёт жёсткую дискретную структуру мира, которую DUN не меняет.
-- **Route Space** — даёт канонический адрес DUN и точку входа в топологию.
-- **Float Space** — описывает runtime-позицию DUN для физики, рендера и логики.
-- **Transform Space** — добавляет к позиции ротацию и масштаб (для Dynamic/Static режимов).
+- **Topology Space** — defines the strict discrete world structure that DUN does not change.
+- **LogicalAnchor Space** — gives DUN a stable Core-side binding and an entry point into topology.
+- **RuntimePosition Space** — describes DUN’s live runtime position for addressing, physics, and logic.
+- **Transform Space** — adds rotation and scale to position for Dynamic/Static modes.
 
-Благодаря этому:
+Because of this:
 
-- топология остаётся стабильным фундаментом;
-- динамика DUN описывается через обычный transform, а не “особые координаты”;
-- системы EQ-Core / EQ-Sim / HAOS могут работать с DUN на одном языке координат,
-  не ломая триаду Topology / Routing / Rotation.
-
----
-
-# 4. Ротация DUN и стабильность топологии
-
-Ротация DUN — один из ключевых моментов, где легко “сломать” всю модель,  
-если пытаться вращать сами воксели или контейнеры на уровне топологии.
-
-В этом разделе фиксируется принципиальное правило:
-
-> **вращается только DUN как transform,  
-> внутренняя воксельная сетка остаётся осевой и статичной.**
+- topology remains a stable foundation;
+- DUN dynamics are described through a normal transform, not “special coordinates”;
+- EQ-Core / EQ-Sim / HAOS systems can work with DUN using one coordinate language,
+  without breaking the `Topology / Routing / Rotation` triad.
 
 ---
 
-## 4.1. Проблема вращения вокселей
+# 4. DUN rotation and topology stability
 
-Если пытаться вращать саму воксельную решётку (grid) DUN:
+DUN rotation is one of the key places where the whole model can easily be “broken”  
+if one tries to rotate voxels or containers at the topology level.
 
-- нарушаются фиксированные **страйды** контейнеров  
-  (воксели уже нельзя индексировать простыми линейными формулами);
-- ломается или усложняется **Morton-кодирование и flat-индексация**  
-  (битовые иерархии перестают соответствовать реальной геометрии);
-- разрушается **иерархия контейнеров**  
-  (Chunk / Octo / Subchunk больше не совпадают с “ровными” блоками пространства);
-- усложняется или становится невозможным:
-  - поиск соседей по целочисленным координатам,
-  - кеширование участков (SVO, LOD),
-  - использование одной и той же топологии для разных DUN.
+This section defines the fundamental rule:
 
-Другими словами:
-
-> вращаемая воксельная сетка = динамически искажённая топология,  
-> с которой уже нельзя работать как с простой дискретной решёткой.
-
-Чтобы этого не происходило, в архитектуре Arden вводится жёсткий инвариант:
-
-> **локальная воксельная сетка DUN всегда axis-aligned и не вращается.**
+> **only DUN rotates as a transform;  
+> the internal voxel grid remains axis-aligned and static.**
 
 ---
 
-## 4.2. Решение через transform
+## 4.1. The problem of rotating voxels
 
-Ротация DUN реализуется не через изменение топологии или перестройку grid,  
-а через обычный transform на уровне мешей и объёмов.
+If one tries to rotate the DUN voxel grid itself:
 
-Последовательность работы:
+- fixed container **strides** are broken  
+  — voxels can no longer be indexed by simple linear formulas;
+- **Morton encoding and flat indexing** are broken or become much more complex  
+  — bit hierarchies no longer correspond to real geometry;
+- the **container hierarchy** is destroyed  
+  — Chunk / Octochunk / container levels no longer match “straight” blocks of space;
+- it becomes difficult or impossible to:
+  - search neighbors by integer coordinates,
+  - cache areas — SVO, LOD,
+  - use the same topology for different DUNs.
 
-1. **Воксели хранятся в локальных координатах (axis-aligned)**  
-   Внутри DUN есть своя локальная воксельная решётка / SVO:
-   
+In other words:
+
+> rotated voxel grid = dynamically distorted topology  
+> that can no longer be treated as a simple discrete grid.
+
+To prevent this, Arden architecture introduces a strict invariant:
+
+> **the local DUN voxel grid is always axis-aligned and does not rotate.**
+
+---
+
+## 4.2. Solution through transform
+
+DUN rotation is implemented not by changing topology or rebuilding the grid,  
+but through a normal transform at the mesh and volume level.
+
+Working sequence:
+
+1. **Voxels are stored in local coordinates, axis-aligned**  
+   Inside DUN there is its own local voxel grid / SVO:
+
+   ```text
    (local_x, local_y, local_z) ∈ [0..Nx) × [0..Ny) × [0..Nz)
+   ```
 
-Она не вращается и не меняет ориентацию.
+   It does not rotate and does not change orientation.
 
-2. **Из вокселей извлекается surface mesh**
-   Воксели интерпретируются как материал/плотность.
-   На их основе строится один или несколько поверхностных мешей:
+2. **A surface mesh is extracted from voxels**  
+   Voxels are interpreted as material/density.  
+   Based on them, one or more surface meshes are built:
 
-   * marching cubes / dual contour / greedy / другой алгоритм;
-   * результат — набор треугольников в локальных координатах DUN.
+   - marching cubes / dual contouring / greedy / another algorithm;
+   - the result is a set of triangles in local DUN coordinates.
 
-3. **Mesh подчиняется transform DUN (position + rotation)**
-   Для отрисовки и физики к mesh применяется:
+3. **Mesh follows the DUN transform — position + rotation**  
+   For rendering and physics, the mesh receives:
 
    ```rust
    DunTransform { position: Vec3, rotation: Quat, scale: Vec3 }
    ```
 
-   В результате меш целиком:
+   As a result, the mesh as a whole:
 
-   * смещается в мировое пространство (position),
-   * поворачивается (rotation),
-   * масштабируется при необходимости (scale).
+   - moves into world space (`position`),
+   - rotates (`rotation`),
+   - scales if needed (`scale`).
 
-4. **Физика и рендер работают только с повёрнутым mesh**
+4. **Physics and render work only with the rotated mesh**
 
-   * рендер использует мировую матрицу трансформации,
-   * физический движок использует collider, построенный на основе mesh или его упрощённой версии,
-   * персонажи и объекты “стоят ногами” на surface mesh, а не на дискретных кубиках вокселей.
+   - render uses the world transformation matrix,
+   - the physics engine uses a collider built from the mesh or a simplified version of it,
+   - characters and objects “stand” on the surface mesh, not on discrete voxel cubes.
 
-5. **Route и топология остаются нетронутыми**
-   При любой ротации и движении DUN:
+5. **LogicalAnchor and topology remain untouched**  
+   During any DUN rotation and movement:
 
-   * Route остаётся тем же (логический адрес),
-   * Topology Space не изменяется,
-   * encode/decode формулы, страйды и размеры контейнеров остаются валидными.
+   - LogicalAnchor remains the same logical binding,
+   - Topology Space does not change,
+   - encode/decode formulas, strides, and container sizes remain valid.
 
-Итог:
+Result:
 
-* внешний мир видит DUN как объект, который может свободно вращаться и двигаться;
-* внутренняя воксельная модель остаётся простой, осевой и стабильной;
-* вся “сложность ротации” сосредоточена в Transform Space, а не в Topology Space.
+- the external world sees DUN as an object that can freely rotate and move;
+- the internal voxel model remains simple, axis-aligned, and stable;
+- all “rotation complexity” is concentrated in Transform Space, not in Topology Space.
 
-## 4.3. Итог: почему ротация через transform
+## 4.3. Summary: why rotation goes through transform
 
-Ротация DUN реализуется только через transform (position + rotation), а не через поворот воксельной решётки. Это гарантирует, что:
+DUN rotation is implemented only through transform (`position + rotation`),  
+not through rotating the voxel grid. This guarantees that:
 
-- топология и Route остаются строгими и неизменными (страйды, encode/decode, контейнеры не ломаются);
-- внутренняя воксельная структура остаётся простой и осевой, пригодной для SVO/LOD и индексации;
-- вся непрерывная динамика (повороты, физика, “наклонные поверхности”) решается на уровне mesh и collider, где это естественно для движка.
+- topology and logical anchor remain strict and unchanged  
+  — strides, encode/decode, and containers do not break;
+- the internal voxel structure remains simple and axis-aligned, suitable for SVO/LOD and indexing;
+- all continuous dynamics — rotations, physics, “sloped surfaces” — are solved at the mesh and collider level, where this is natural for an engine.
 
-Таким образом, **DUN может свободно вращаться в мире, не искажая базовую дискретную модель пространства**.
-
----
-
-# 5. Внутренняя структура DUN (первый уровень)
-
-Этот раздел описывает **минимальный каркас** данных, который должен быть у любого DUN.  
-Это не окончательная структура для кода, а **концептуальный “паспорт” полей**,  
-на который будут опираться EQ-Core, EQ-Sim, HAOS и специализированные DUN-доки  
-(DUN.Mesh, DUN.Physics, DUN.Instance, DUN.Blueprint).
+Thus, **DUN can freely rotate in the world without distorting the base discrete spatial model**.
 
 ---
 
-## 5.1. Концептуальная структура DUN
+# 5. Internal DUN structure — first level
 
-На концептуальном уровне DUN можно представить так:
+This section describes the **minimal data skeleton** that every DUN should have.  
+This is not the final code structure, but a **conceptual “field passport”**  
+that EQ-Core, EQ-Sim, HAOS, and specialized DUN documents  
+(`DUN.Mesh`, `DUN.Physics`, `DUN.Instance`, `DUN.Blueprint`) will rely on.
+
+---
+
+## 5.1. Conceptual DUN structure
+
+At the conceptual level, DUN can be represented as:
 
 ```rust
 DUN {
-    // 1) Привязка к топологии
-    route: Route,
-
-    // 2) Transform (положение и ориентация в мире)
+    anchor: DunAnchor,               // logical anchor in EQ-Core
+    runtime_position: RuntimePosition,
     transform: DunTransform,
-
-    // 3) Локальные данные вокселей / объёма
     volume: DunVolume,
-
-    // 4) Поверхностное представление (меши и коллайдеры)
     surface: DunSurface,
-
-    // 5) Ограничивающие объёмы (bounding volumes)
     bounds: DunBounds,
-
-    // 6) Состояние участия в симуляции/стриминге
     state: DunState,
 }
 ```
 
-Где подтипы раскрываются на первом уровне следующим образом.
-
----
-
-## 5.2. Привязка к топологии
+Where:
 
 ```rust
-route: Route
+enum DunAnchor {
+    DensityKey(DensityKey),
+    FullRoute(FullRoute),
+}
 ```
-
-**Route** — это канонический адрес DUN в дискретном мире:
-
-* указывает, к какому Region / Block / Chunk / Octochunk относится DUN;
-* используется EQ-Core, стримингом и подсистемами хранения;
-* не содержит float-позиций и не описывает ротацию.
-
-Это единственная точка, через которую DUN “видит” топологию
-и остаётся совместим с триадой Topology / Routing / Rotation.
 
 ---
 
-## 5.3. Transform DUN
+## 5.2. Binding to topology
+
+```rust
+anchor: DunAnchor
+```
+
+**DunAnchor** is the logical DUN anchor in EQ-Core.
+
+It defines a stable discrete binding of DUN to the world  
+and is used for storage, streaming, grouping, and persistence logic.
+
+In the active MVP, this may be:
+
+- `DensityKey`
+- `FullRoute`
+
+Practically, this means:
+
+- `anchor` defines which place in the discrete world DUN is bound to;
+- `anchor` does not store runtime-float position;
+- `anchor` does not describe rotation;
+- `anchor` remains the Core-side truth for logical binding,
+  while runtime movement lives in `RuntimePosition + Transform`.
+
+---
+
+## 5.3. DUN Transform
 
 ```rust
 struct DunTransform {
-    position: Vec3,  // мировая позиция опорной точки DUN
-    rotation: Quat,  // ориентация DUN (0–360°, для Dynamic DUN)
-    scale: Vec3,     // обычно (1.0, 1.0, 1.0)
+    position: Vec3,  // world position of the DUN anchor point
+    rotation: Quat,  // DUN orientation (0–360°, for Dynamic DUN)
+    scale: Vec3,     // usually (1.0, 1.0, 1.0)
 }
 ```
 
-Transform описывает:
+Transform describes:
 
-* где DUN находится в **float-пространстве**;
-* как он ориентирован (особенно для Dynamic DUN);
-* какой масштаб применяется к его surface-представлению.
+- where DUN is in **float-space**;
+- how it is oriented, especially for Dynamic DUN;
+- what scale is applied to its surface representation.
 
-Для **Static DUN**:
+For **Static DUN**:
 
-* `position` совпадает с origin, вычисленным из Route;
-* `rotation` либо нулевая, либо дискретная (0/90/180/270°, через Rotation Layer);
-* `scale` почти всегда `(1,1,1)`.
+- `position` matches the origin computed from the logical anchor;
+- `rotation` is either zero or discrete (`0/90/180/270°`, through Rotation Layer);
+- `scale` is almost always `(1,1,1)`.
 
-Для **Dynamic DUN**:
+For **Dynamic DUN**:
 
-* `position` свободно перемещается;
-* `rotation` — полноценный quaternion;
-* `scale` чаще всего тоже единичный, но может быть расширен будущими доками.
+- `position` moves freely;
+- `rotation` is a full quaternion;
+- `scale` is usually also unit, but may be expanded by future documents.
 
 ---
 
-## 5.4. Локальные объёмы: воксели и/или SVO
+## 5.4. Local volumes: voxels and/or SVO
 
 ```rust
 struct DunVolume {
-    voxel_grid: Option<VoxelGrid>,  // регулярная решётка (если используется)
-    svo_tree:   Option<SvoTree>,    // sparse-структура (LOD/SVO, если используется)
-    local_aabb: Aabb,               // AABB в локальных координатах DUN
+    voxel_grid: Option<VoxelGrid>,  // regular grid, if used
+    svo_tree:   Option<SvoTree>,    // sparse structure for LOD/SVO, if used
+    local_aabb: Aabb,               // AABB in local DUN coordinates
 }
 ```
 
-**DunVolume** описывает “начинку” DUN:
+**DunVolume** describes the “inside” of DUN:
 
-* `voxel_grid` — локальная воксельная решётка (axis-aligned), если нужна;
-* `svo_tree` — разреженное дерево для оптимизаций, LOD и сложных форм;
-* `local_aabb` — минимальный AABB, который покрывает весь объём DUN
-  в его **локальной системе координат**.
+- `voxel_grid` — local voxel grid, axis-aligned, if needed;
+- `svo_tree` — sparse tree for optimizations, LOD, and complex shapes;
+- `local_aabb` — minimal AABB covering the whole DUN volume
+  in its **local coordinate system**.
 
-Главное:
+The key point:
 
-* воксельная структура не вращается;
-* DunVolume живёт в локальном пространстве DUN.
+- voxel structure does not rotate;
+- DunVolume lives in local DUN space.
 
 ---
 
-## 5.5. Поверхностное представление (меши и коллайдеры)
+## 5.5. Surface representation — meshes and colliders
 
 ```rust
 struct DunSurface {
-    meshes: Vec<MeshId>,        // один или несколько surface mesh'ей
-    collider: PhysicsCollider,  // форма для физики (на базе mesh или примитивов)
+    meshes: Vec<MeshId>,        // one or more surface meshes
+    collider: PhysicsCollider,  // physics shape based on mesh or primitives
 }
 ```
 
-**DunSurface** отвечает за всё, с чем взаимодействует:
+**DunSurface** is responsible for everything that interacts with:
 
-* рендер (модели, поверхности, LOD-меши),
-* физика (коллизии, стояние персонажа, raycast).
+- render — models, surfaces, LOD meshes;
+- physics — collisions, character standing, raycasts.
 
-Ключевые моменты:
+Key points:
 
-* meshes строятся из DunVolume (вокселей / SVO);
-* при рендере и физике к mesh применяется `DunTransform`;
-* персонаж “стоит” на mesh, а не на raw-вокселях.
+- meshes are built from DunVolume — voxels / SVO;
+- during render and physics, `DunTransform` is applied to the mesh;
+- the character “stands” on the mesh, not on raw voxels.
 
 ---
 
-## 5.6. Ограничивающие объёмы (bounding volumes)
+## 5.6. Bounding volumes
 
 ```rust
 struct DunBounds {
-    aabb_local: Aabb, // axis-aligned в локальном пространстве DUN
-    obb_world: Obb,   // ориентированный бокс в мировом пространстве
+    aabb_local: Aabb, // axis-aligned in local DUN space
+    obb_world: Obb,   // oriented box in world space
 }
 ```
 
-**DunBounds** связывает локальную и мировую геометрию:
+**DunBounds** connects local and world geometry:
 
-* `aabb_local`:
+- `aabb_local`:
 
-  * используется HAOS / DTO и простыми алгоритмами;
-  * всегда axis-aligned, не зависит от rotation;
-  * может совпадать с DunVolume.local_aabb или быть агрегированным.
+  - used by HAOS / DTO and simple algorithms;
+  - always axis-aligned, independent of rotation;
+  - may match `DunVolume.local_aabb` or be aggregated.
 
-* `obb_world`:
+- `obb_world`:
 
-  * вычисляется из `aabb_local` + `DunTransform`;
-  * описывает реальный объём DUN в мировом пространстве;
-  * используется физикой и точным broad-phase.
+  - computed from `aabb_local + DunTransform`;
+  - describes the real DUN volume in world space;
+  - used by physics and precise broad-phase.
 
 ---
 
-## 5.7. Состояние DUN
+## 5.7. DUN state
 
 ```rust
 enum DunState {
-    Active,      // участвует в симуляции и обновлениях
-    Dormant,     // присутствует, но не тикает
-    Archived,    // выгружен/сохранён, отсутствует в памяти как полнотелый объект
-    TempLoaded,  // только что загружен, ещё не вошёл в активный цикл
+    Active,      // participates in simulation and updates
+    Dormant,     // exists, but does not tick
+    Archived,    // unloaded/saved, not present in memory as a full object
+    TempLoaded,  // just loaded, not yet in the active cycle
 }
 ```
 
-**DunState** описывает участие DUN в:
+**DunState** describes DUN participation in:
 
-* симуляции,
-* стриминге,
-* оптимизациях.
+- simulation,
+- streaming,
+- optimization.
 
-Алгоритмы переходов между состояниями не описываются в этом документе
-и будут заданы в EQ-Sim / HAOS. Здесь фиксируется только **набор допустимых статусов**.
-
----
-
-## 5.8. Итог: роль внутренней структуры DUN
-
-Внутренняя структура DUN задаёт **минимальный единый формат**, к которому могут обращаться:
-
-* EQ-Core (как к структуре хранения и состояния),
-* EQ-Sim (как к единице симуляции),
-* HAOS/DTO (как к объекту оптимизации и сна/пробуждения),
-* Mesh/Render-подсистемы (как к носителю surface-геометрии),
-* Physics (как к носителю collider’ов и объёмов).
-
-Это **не финальная структура данных в коде**, а архитектурный каркас:
-конкретные поля и типы могут расширяться в отдельных документах (`DUN.Mesh`, `DUN.Physics`, `DUN.Instance`),
-но базовые группы полей и их смысл должны оставаться неизменными.
+State transition algorithms are not described in this document  
+and will be defined in EQ-Sim / HAOS. Here, only the **set of allowed statuses** is fixed.
 
 ---
 
-# 6. Состояния DUN
+## 5.8. Summary: role of the internal DUN structure
 
-Состояние DUN определяет, **насколько активно этот узел участвует в симуляции и стриминге**,  
-и какие подсистемы имеют право с ним работать в текущий момент.
+The internal DUN structure defines a **minimal unified format** that can be used by:
 
-На уровне структуры (см. 5.7) это представлено как `DunState`,  
-здесь фиксируется **семантика** этих состояний.
+- EQ-Core — as a structure of storage and state,
+- EQ-Sim — as a simulation unit,
+- HAOS/DTO — as an object of optimization and sleep/wake-up,
+- Mesh/Render subsystems — as a carrier of surface geometry,
+- Physics — as a carrier of colliders and volumes.
 
----
-
-## 6.1. Назначение состояний
-
-Состояния DUN нужны для того, чтобы:
-
-- разграничить **активные** и **спящие** участки мира;
-- позволить HAOS/DTO управлять загрузкой и выгрузкой узлов;
-- дать EQ-Sim понятный сигнал: этот DUN нужно тикать / не нужно тикать;
-- уменьшить нагрузку на CPU/GPU при большом количестве DUN.
-
-Состояние — это **флаг уровня архитектуры**,  
-а не конкретная реализация алгоритмов сна/пробуждения.
+This is **not the final data structure in code**, but an architectural skeleton:  
+specific fields and types may be expanded in separate documents (`DUN.Mesh`, `DUN.Physics`, `DUN.Instance`),  
+but the basic field groups and their meaning should remain unchanged.
 
 ---
 
-## 6.2. Семантика состояний DunState
+# 6. DUN states
+
+DUN state defines **how actively this node participates in simulation and streaming**,  
+and which subsystems are allowed to work with it at the current moment.
+
+At the structure level (see `5.7`), this is represented as `DunState`;  
+here, the **semantics** of these states are defined.
+
+---
+
+## 6.1. Purpose of states
+
+DUN states are needed to:
+
+- separate **active** and **sleeping** parts of the world;
+- allow HAOS/DTO to manage node loading and unloading;
+- give EQ-Sim a clear signal: this DUN should tick / should not tick;
+- reduce CPU/GPU load when there are many DUNs.
+
+State is an **architecture-level flag**,  
+not a concrete implementation of sleep/wake-up algorithms.
+
+---
+
+## 6.2. Semantics of DunState
 
 ```rust
 enum DunState {
@@ -992,309 +1012,319 @@ enum DunState {
 
 ### **Active**
 
-DUN находится в активной фазе:
+DUN is in an active phase:
 
-* участвует в тиках симуляции;
-* его Transform может изменяться (особенно для Dynamic DUN);
-* его surface/mesh может обновляться;
-* физика и логика взаимодействий учитывают этот DUN.
+- participates in simulation ticks;
+- its Transform may change, especially for Dynamic DUN;
+- its surface/mesh may update;
+- physics and interaction logic take this DUN into account.
 
-Типичные случаи:
+Typical cases:
 
-* подвижные объекты (Dynamic DUN);
-* чанки рядом с игроком;
-* области, где сейчас происходят изменения.
+- movable objects — Dynamic DUN;
+- chunks near the player;
+- areas where changes are currently happening.
 
 ---
 
 ### **Dormant**
 
-DUN находится в “спящем” состоянии:
+DUN is in a “sleeping” state:
 
-* данные DUN присутствуют в памяти (volume, surface, bounds);
-* Transform не меняется (или меняется крайне редко);
-* DUN не тикает каждый кадр/шаг симуляции;
-* физика может считать его статической геометрией (по mesh/collider’у);
-* HAOS/DTO могут разбудить DUN при необходимости.
+- DUN data is present in memory — volume, surface, bounds;
+- Transform does not change, or changes very rarely;
+- DUN does not tick every frame / simulation step;
+- physics may treat it as static geometry through mesh/collider;
+- HAOS/DTO may wake DUN if needed.
 
-Типичные случаи:
+Typical cases:
 
-* дальние участки мира, которые видимы, но не активно изменяются;
-* статические объекты, к которым давно не было обращений.
+- distant world areas that are visible but not actively changing;
+- static objects that have not been accessed for a long time.
 
 ---
 
 ### **Archived**
 
-DUN выгружен из активной памяти:
+DUN is unloaded from active memory:
 
-* полные данные (volume, surface, bounds) могут быть сохранены на диск или в сжатом виде;
-* в оперативной памяти может остаться только “тонкая” запись (Route, ID, метаданные);
-* DUN не участвует ни в симуляции, ни в рендере;
-* может быть восстановлен в TempLoaded / Active при стриминге.
+- full data — volume, surface, bounds — may be saved to disk or in compressed form;
+- only a “thin” record may remain in RAM — Route, ID, metadata;
+- DUN participates in neither simulation nor rendering;
+- it can be restored into TempLoaded / Active during streaming.
 
-Типичные случаи:
+Typical cases:
 
-* регионы, к которым игрок давно не подходил;
-* серверные snapshot’ы мира.
+- regions the player has not approached for a long time;
+- server world snapshots.
 
 ---
 
 ### **TempLoaded**
 
-Промежуточное состояние:
+Intermediate state:
 
-* DUN только что подтянут из `Archived`;
-* данные восстановлены частично или полностью;
-* ещё не включён в основной симуляционный цикл;
-* может быть подготовлен HAOS/DTO и затем переведён в Active или Dormant.
+- DUN has just been pulled from `Archived`;
+- data has been restored partially or fully;
+- it is not yet included in the main simulation cycle;
+- HAOS/DTO may prepare it and then move it to Active or Dormant.
 
-Типичные случаи:
+Typical cases:
 
-* подгрузка чанка перед появлением игрока;
-* восстановление динамического объекта из сохранения.
-
----
-
-## 6.3. Ответственность подсистем
-
-* **EQ-Core** отвечает за консистентность данных DUN в каждом состоянии
-  (что именно обязано быть в памяти: только Route, Route+Volume, полный объект).
-
-* **EQ-Sim** отвечает за то, какие состояния участвуют в тике
-  (обычно только `Active`, иногда частично `Dormant` для статических объектов).
-
-* **HAOS/DTO** отвечают за переходы между состояниями
-  (когда “усыпить”, когда “разбудить”, когда “архивировать”).
-
-В этом документе фиксируется только **сам набор состояний и их смысл**.
-Конкретные правила переходов будут описаны в EQ-документах.
+- chunk loading before the player appears nearby;
+- restoring a dynamic object from a save.
 
 ---
 
-# 7. Почему DUN не ломает Topology / Routing / Rotation
+## 6.3. Subsystem responsibilities
 
-DUN изначально спроектирован как **надстройка над триадой 1.x**,
-а не как её модификация. Здесь фиксируются архитектурные гарантии,
-почему добавление DUN не разрушает:
+- **EQ-Core** is responsible for DUN data consistency in each state  
+  — what exactly must be in memory: only Route, Route+Volume, or full object.
 
-* Topology Space (структуру контейнеров),
-* Route Space (адресацию),
-* Rotation Layer (дискретные повороты в топологии).
+- **EQ-Sim** is responsible for which states participate in ticks  
+  — usually only `Active`, sometimes partly `Dormant` for static objects.
+
+- **HAOS/DTO** are responsible for transitions between states  
+  — when to “put to sleep”, when to “wake up”, when to “archive”.
+
+This document defines only **the state set and their meaning**.  
+Specific transition rules will be described in EQ documents.
 
 ---
 
-## 7.1. Гарантии относительно Topology Space
+# 7. Why DUN does not break Topology / Routing / Rotation
+
+DUN is designed from the start as a **layer above the `1.x` triad**,  
+not as a modification of it. This section defines architectural guarantees  
+for why adding DUN does not break:
+
+- Topology Space — container structure;
+- Routing Space / active address forms;
+- Rotation Layer — discrete rotations in topology.
+
+---
+
+## 7.1. Guarantees for Topology Space
 
 DUN:
 
-* **не меняет размеры контейнеров** (Region/Block/Chunk/Octo и т.п.);
-* **не меняет страйды** и схемы индексации;
-* **не вмешивается в encode/decode формулы** координат и Route;
-* **не вращает** воксельную решётку (`voxel_grid`, `svo_tree` остаются axis-aligned).
+- does **not change container sizes** of active topology;
+- does **not change strides** or indexing schemes;
+- does **not interfere with encode/decode formulas** of coordinates and active address forms;
+- does **not rotate** the voxel grid — `voxel_grid` and `svo_tree` remain axis-aligned.
 
-Следствие:
+Consequence:
 
-* все свойства, доказанные и описанные в документах Topology/Route,
-  остаются валидными независимо от количества и поведения DUN;
-* любые алгоритмы, опирающиеся на строгую топологию (поиск соседей, Morton, SVO/LOD),
-  могут работать, не зная о существовании DUN.
-
----
-
-## 7.2. Гарантии относительно Route Space
-
-DUN:
-
-* всегда имеет **один канонический Route** (логический адрес в мире);
-* не меняет структуру Route и правила его построения;
-* не требует “особых” видов Route для Static/ Dynamic режимов;
-* использует Route только как **якорь** для:
-
-  * хранения,
-  * стриминга,
-  * группировки по регионам.
-
-Следствие:
-
-* системы сохранения и загрузки могут работать с DUN так же, как с любыми другими сущностями,
-  опираясь на Route как на “координаты в дискретном мире”;
-* Topology + Route остаются “единой картой мира”, к которой DUN лишь привязывается.
+- all properties proven and described in the Topology/Routing documents  
+  remain valid regardless of the number and behavior of DUNs;
+- any algorithms relying on strict topology — neighbor search, Morton, SVO/LOD —  
+  can operate without knowing that DUN exists.
 
 ---
 
-## 7.3. Гарантии относительно Rotation Layer
-
-Rotation Layer (из 1.x):
-
-* описывает дискретные повороты контейнеров (0/90/180/270°),
-* используется там, где нужны “жёсткие” повороты, совместимые с топологией.
+## 7.2. Guarantees for LogicalAnchor Space
 
 DUN:
 
-* не изменяет набор дискретных ротаций в Rotation Layer;
-* не требует введения новых дискретных состояний в топологии;
-* использует **Transform Space** (Quat) только на уровне mesh / collider / OBB.
+- always has **one canonical Route** — logical address in the world;
+- does not change Route structure or construction rules;
+- does not require “special” Route types for Static / Dynamic modes;
+- uses Route only as an **anchor** for:
+
+  - storage,
+  - streaming,
+  - grouping by regions.
+
+Consequence:
+
+- save and load systems can work with DUN like with any other entities,
+  relying on logical anchor and active address model;
+- Topology + Routing remain the “single map of the world” to which DUN is only attached.
+
+---
+
+## 7.3. Guarantees for Rotation Layer
+
+Rotation Layer from `1.x`:
+
+- describes discrete container rotations (`0/90/180/270°`),
+- is used where “hard” rotations compatible with topology are needed.
+
+DUN:
+
+- does not change the set of discrete rotations in Rotation Layer;
+- does not require introducing new discrete states into topology;
+- uses **Transform Space** (`Quat`) only at the level of mesh / collider / OBB.
 
 Static DUN:
 
-* может использовать Rotation Layer (дискретные повороты) в качестве своей ориентации.
+- may use Rotation Layer — discrete rotations — as its orientation.
 
 Dynamic DUN:
 
-* использует quaternion-ротацию поверх уже существующей топологии,
-  не добавляя новых состояний в Rotation Layer.
+- uses quaternion rotation above existing topology,
+  without adding new states to Rotation Layer.
 
-Следствие:
+Consequence:
 
-* Rotation Layer остаётся самодостаточной системой для дискретных поворотов;
-* непрерывные повороты DUN не требуют изменений в триаде.
-
----
-
-## 7.4. Гарантия разделения слоёв
-
-В сумме DUN обеспечивает **жёсткое разделение слоёв**:
-
-* Topology / Route / Rotation — описывают **глобальное дискретное пространство**;
-* DUN — описывает **локальные динамические узлы** в этом пространстве;
-* Transform / Mesh / Physics — описывают **конкретное поведение и геометрию** DUN.
-
-DUN работает **поверх** триады, используя её как фундамент,
-но не меняя её определений, формул и инвариантов.
-
-Именно поэтому:
-
-> добавление DUN делает мир динамичным и интерактивным,
-> но не превращает топологию в “плавающую” или нестабильную систему.
+- Rotation Layer remains a self-sufficient system for discrete rotations;
+- continuous DUN rotations do not require changes in the triad.
 
 ---
 
-# 8. Место DUN в архитектуре и дальнейшие документы
+## 7.4. Guarantee of layer separation
 
-Раздел 2.x фиксирует DUN как **минимальную динамическую единицу мира**, построенную **поверх** триады:
+In total, DUN provides **strict layer separation**:
 
-- Topology / Routing / Rotation (1.x) — жёсткий дискретный фундамент;
-- DUN (2.x) — локальные динамические узлы;
-- Transform / Mesh / Physics — непрерывное поведение и геометрия поверх DUN.
+- Topology / Routing / Rotation describe **global discrete space**;
+- DUN describes **local dynamic nodes** in this space;
+- Transform / Mesh / Physics describe **concrete DUN behavior and geometry**.
 
-Этот документ задаёт:
+DUN works **above** the triad, using it as a foundation,  
+but does not change its definitions, formulas, or invariants.
 
-- определение DUN (Static / Dynamic режимы);
-- инварианты (что DUN делает и чего не делает);
-- Anchor Model (Topology → Route → Float → Transform);
-- правила ротации через transform;
-- базовую внутреннюю структуру и состояния DUN.
+That is why:
 
-Дальнейшие уровни архитектуры не меняют эти правила, а опираются на них.
+> adding DUN makes the world dynamic and interactive,  
+> but does not turn topology into a “floating” or unstable system.
 
 ---
 
-## 8.1. Связь с документами 1.x (Topology / Routing / Rotation)
+# 8. DUN place in architecture and future documents
 
-Документы 1.x описывают:
+Section `2.x` defines DUN as a **minimal dynamic world unit**, built **above** the triad:
 
-- дискретную топологию мира (иерархия Region → Block → Chunk → Octochunk → …),
-- схемы адресации Route,
-- дискретный Rotation Layer.
+- Topology / Routing / Rotation (`1.x`) — strict discrete foundation;
+- DUN (`2.x`) — local dynamic nodes;
+- Transform / Mesh / Physics — continuous behavior and geometry above DUN.
+
+This document defines:
+
+- DUN definition — Static / Dynamic modes;
+- invariants — what DUN does and what it does not do;
+- Anchor Model — `Topology → LogicalAnchor → RuntimePosition → Transform`;
+- transform-based rotation rules;
+- basic internal structure and DUN states.
+
+Further architecture levels do not change these rules; they rely on them.
+
+---
+
+## 8.1. Relationship with `1.x` documents — Topology / Routing / Rotation
+
+The `1.x` documents describe:
+
+- discrete world topology — `Region → Chunk → Octochunk → Voxel`;
+- active address forms in Routing;
+- discrete Rotation Layer.
 
 DUN:
 
-- не изменяет ни размеры контейнеров, ни страйды, ни encode/decode Route;
-- не вращает воксельную решётку;
-- использует Route как логический якорь и точку входа в топологию;
-- добавляет над этим слоем только transform, mesh, collider и состояния.
+- does not change container sizes, strides, or encode/decode active address forms;
+- does not rotate the voxel grid;
+- uses logical anchor as a Core-side binding and an entry point into topology;
+- only adds runtime-position, transform, mesh, collider, and states above this layer.
 
-Таким образом, **1.x остаются “законами мироздания”**,  
-а DUN — управляемым “жителем” этого мира.
+Thus, **`1.x` remains the “laws of the universe”**,  
+while DUN is a controlled “inhabitant” of this world.
 
 ---
 
-## 8.2. Связь с будущими EQ-документами (3.x)
+## 8.2. Relationship with future EQ documents — `3.x`
 
-Следующий крупный блок архитектуры — серия документов **3.x (EQ / Simulation Layer)**:
+The next major architecture block is the **`3.x` document series (`EQ / Simulation Layer`)**:
 
 - **EQ-Core**  
-  Описывает, как ядро мира хранит DUN:
-  - таблицы/реестры DUN,
-  - связь Route → DUN,
-  - format для сохранений и стриминга,
-  - какие поля DUN обязаны быть консистентны в каждом состоянии (Active / Dormant / Archived).
+  EQ-Core stores the stable truth model of DUN:
+  - `anchor`,
+  - `volume`,
+  - `surface` refs,
+  - `bounds`,
+  - `state`,
+  - persistent metadata.
 
 - **EQ-Sim**  
-  Описывает, как DUN участвует в тике симуляции:
-  - кто тикает только `Active`, кто частично `Dormant`,
-  - как используется `DunState` в шагах симуляции,
-  - как учитывается Transform / Anchor Model при логике.
+  EQ-Sim executes runtime DUN behavior:
+  - `runtime_position`,
+  - `transform`,
+  - physics participation,
+  - tick logic,
+  - sim grouping.
 
 - **HAOS (Hybrid Adaptive Optimization System)**  
-  Описывает, как оптимизируется активность DUN:
-  - переходы между Active / Dormant / Archived / TempLoaded,
-  - бюджеты на DUN по регионам, классам и семействам,
-  - взаимодействие с DTO (системами сна/пробуждения) и bounding-объёмами.
+  Describes how DUN activity is optimized:
+  - transitions between `Active / Dormant / Archived / TempLoaded`,
+  - DUN budgets by regions, classes, and families,
+  - interaction with DTO — sleep/wake-up systems — and bounding volumes.
 
-Все эти подсистемы работают **на уже установленных инвариантах DUN**  
-и не меняют его базового контракта.
+All these subsystems work **on top of the already established DUN invariants**  
+and do not change its base contract.
 
 ---
 
-## 8.3. Специализированные DUN-документы
+## 8.3. Specialized DUN documents
 
-Поверх этого базового документа планируются отдельные уточняющие спецификации:
+On top of this base document, separate clarifying specifications are planned:
 
 - **DUN.Mesh**  
-  - как из DunVolume (voxel_grid / SVO) строятся surface mesh’и,
-  - политика LOD и обновления mesh при изменении вокселей,
-  - связь mesh-слоя с Transform и Render.
+  - how surface meshes are built from `DunVolume` (`voxel_grid / SVO`),
+  - LOD policy and mesh updates when voxels change,
+  - connection between the mesh layer, Transform, and Render.
 
 - **DUN.Physics**  
-  - как из DunBounds и mesh формируются collider’ы,
-  - какие типы тел используются для Static / Dynamic DUN,
-  - правила использования AABB/OBB в физике и broad-phase.
+  - how colliders are formed from `DunBounds` and mesh,
+  - which body types are used for Static / Dynamic DUN,
+  - rules for using AABB/OBB in physics and broad-phase.
 
 - **DUN.Blueprint**  
-  - шаблоны DUN (стены, модули, корабли, структуры),
-  - параметры разрушения/фрагментации, предварительные mesh/volume-заготовки,
-  - связь blueprint’ов с EQ-Core/стримингом.
+  - DUN templates — walls, modules, ships, structures,
+  - destruction/fragmentation parameters, prebuilt mesh/volume assets,
+  - connection between blueprints and EQ-Core/streaming.
 
 - **DUN.Instance**  
-  - runtime-представление Dynamic DUN,
-  - связь экземпляра с blueprint’ами,
-  - дополнительные поля, нужные только во время симуляции (таймеры, локальные контроллеры и т.п.).
+  - runtime representation of Dynamic DUN,
+  - connection between an instance and blueprints,
+  - additional fields needed only during simulation — timers, local controllers, and so on.
 
-Каждый из этих документов **не переопределяет** базовый контракт DUN,  
-а лишь детализирует отдельные аспекты: геометрию, физику, шаблоны, инстансы.
-
----
-
-## 8.4. Что считать стабильным, а что может меняться
-
-Считаются **стабильными** и не подлежащими произвольной смене:
-
-- определение DUN как Dynamic Unit Node;
-- разделение Static / Dynamic режимов;
-- Anchor Model (Topology → Route → Float → Transform);
-- инварианты 2.x (топология, Route, ротация, mesh / voxel, AABB / OBB, фиксированный объём);
-- базовая структура DUN (route, transform, volume, surface, bounds, state);
-- набор состояний DunState.
-
-Могут эволюционировать в будущих версиях:
-
-- конкретные поля внутри DunVolume / DunSurface / DunBounds;
-- расширения для DUN.Instance / DUN.Blueprint;
-- стратегии управления состояниями DUN в EQ-Sim и HAOS;
-- дополнительные подклассы DUN под конкретные задачи (вода, большие структуры, FX и т.п.).
+Each of these documents **does not redefine** the base DUN contract,  
+but only details separate aspects: geometry, physics, templates, and instances.
 
 ---
 
-## 8.5. Итог
+## 8.4. What is stable and what may change
 
-Этот документ фиксирует DUN как:
+Considered **stable** and not subject to arbitrary changes:
 
-> **атомарный узел динамического мира Arden,  
-> который добавляет движение, ротацию и физику,  
-> не ломая строгую дискретную топологию ядра.**
+- definition of DUN as Dynamic Unit Node;
+- separation of Static / Dynamic modes;
+- Anchor Model (`Topology → LogicalAnchor → RuntimePosition → Transform`);
+- `2.x` invariants — topology, logical anchor, rotation, mesh / voxel, AABB / OBB, fixed volume;
+- base DUN structure — anchor, runtime_position, transform, volume, surface, bounds, state;
+- `DunState` set.
 
-Все последующие архитектурные документы (1.x, 3.x и специализированные DUN-модули)  
-будут опираться на описанные здесь инварианты и модель якорения,  
-чтобы сохранить целостность проекта и понятный контракт для разработчиков и исследователей.
+May evolve in future versions:
+
+- specific fields inside `DunVolume / DunSurface / DunBounds`;
+- extensions for `DUN.Instance / DUN.Blueprint`;
+- DUN state management strategies in EQ-Sim and HAOS;
+- additional DUN subclasses for specific tasks — water, large structures, FX, and so on.
+
+---
+
+## 8.5. Summary
+
+This document defines DUN as:
+
+> **an atomic node of Arden’s dynamic world,  
+> which adds movement, rotation, and physics  
+> without breaking the strict discrete topology of the core.**
+
+All subsequent architecture documents (`1.x`, `3.x`, and specialized DUN modules)  
+will rely on the invariants and anchoring model described here  
+to preserve project integrity and a clear contract for developers and researchers.
+
+---
+
+[📚 Back](./README.md)
+
+[🧱 Project Architecture Portal](../../ARCHITECTURE/readme.md)  

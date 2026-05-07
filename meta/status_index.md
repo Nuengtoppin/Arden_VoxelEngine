@@ -1,3 +1,4 @@
+
 # 🧾 Status Index
 
 ---
@@ -8,67 +9,69 @@
 **Last update:** 2025-12-03
 ---
 
-## 🎯 Назначение
-Формирует централизованный реестр статусов всех ключевых файлов проекта **Arden Engine**.  
-Используется для ручного и/или автоматического контроля состояния архитектуры, кода и документации.
+## 🎯 Purpose
+
+Creates a centralized status registry for all key files of the **Arden Engine** project.  
+Used for manual and/or automatic tracking of the state of architecture, code, and documentation.
 
 ---
 
-## 📊 Таблица статусов
+## 📊 Status Table
 
-| Путь | Статус | Версия | Обновлён | Комментарий |
-|------|---------|---------|-----------|--------------|
-| **/docs/RU/ARCHITECTURE/1_TopologyLogic_Route_Rotation/README.md** | 🔬 Review | 0.1.0 | 2025-11-25 | Фундамент архитектуры 0.1 |
-| **/docs/RU/ARCHITECTURE/2_Dynamic_unit_node/DUN.md** | 🔬 Review | 0.1.0 | 2025-11-30 | Разработка описания DUN |
-| **/docs/RU/MVP/MVP_0.1.md** | 🔬 Review | 0.1.0 | 2025-11-30 | Концепт MVP 0.1 |
-| **/src/dun/spawn.rs** | 🧪 Stable-Test | 0.2.1 | 2025-12-02 | Тестирование спавна DUN |
-| **/src/physics/mod.rs** | 🧩 Draft | 0.2.0 | 2025-11-28 | Основы модуля физики |
-| **/meta/status_system.md** | 🧱 Stable | 1.0.0 | 2025-12-01 | Нормативный справочник статусов |
-| **/meta/project_status.md** | 🔬 Review | 0.2.0 | 2025-11-30 | Состояние MVP, кода и docs |
-| **/meta/log_2025.md** | 🧩 Draft | 0.1.1 | 2025-11-30 | Журнал изменений 2025 года |
-| **/meta/log_2026.md** | 🧩 Draft | 0.1.0 | 2026-01-01 | Подготовка к следующему этапу |
-| **/meta/focus_2025.md** | 🧩 Draft | 0.1.0 | 2025-11-30 | Годовые приоритеты и цели |
-| **/meta/roles_and_structure.md** | 🔬 Review | 0.1.0 | 2025-11-30 | Роли и организационная модель |
-| **/meta/origin_and_rights.md** | 🧱 Stable | 1.0.0 | 2025-11-30 | Лицензии, авторство, происхождение проекта |
-
----
-
-## ⚙ Формат записи
-
-| Поле | Значение |
-|------|-----------|
-| **Путь** | Абсолютный или относительный путь к файлу. |
-| **Статус** | Один из статусов из [Status System](status_system.md). |
-| **Версия** | Текущая версия файла. |
-| **Обновлён** | Дата последнего редактирования. |
-| **Комментарий** | Краткое описание назначения или изменений. |
+| Path | Status | Version | Updated | Comment |
+|------|--------|---------|---------|---------|
+| **/docs/RU/ARCHITECTURE/1_TopologyLogic_Route_Rotation/README.md** | 🔬 Review | 0.1.0 | 2025-11-25 | Foundation of architecture 0.1 |
+| **/docs/RU/ARCHITECTURE/2_Dynamic_unit_node/DUN.md** | 🔬 Review | 0.1.0 | 2025-11-30 | DUN description development |
+| **/docs/RU/MVP/MVP_0.1.md** | 🔬 Review | 0.1.0 | 2025-11-30 | MVP 0.1 concept |
+| **/src/dun/spawn.rs** | 🧪 Stable-Test | 0.2.1 | 2025-12-02 | DUN spawn testing |
+| **/src/physics/mod.rs** | 🧩 Draft | 0.2.0 | 2025-11-28 | Physics module foundation |
+| **/meta/status_system.md** | 🧱 Stable | 1.0.0 | 2025-12-01 | Normative status reference |
+| **/meta/project_status.md** | 🔬 Review | 0.2.0 | 2025-11-30 | State of MVP, code, and docs |
+| **/meta/log_2025.md** | 🧩 Draft | 0.1.1 | 2025-11-30 | 2025 change log |
+| **/meta/log_2026.md** | 🧩 Draft | 0.1.0 | 2026-01-01 | Preparation for the next stage |
+| **/meta/focus_2025.md** | 🧩 Draft | 0.1.0 | 2025-11-30 | Annual priorities and goals |
+| **/meta/roles_and_structure.md** | 🔬 Review | 0.1.0 | 2025-11-30 | Roles and organizational model |
+| **/meta/origin_and_rights.md** | 🧱 Stable | 1.0.0 | 2025-11-30 | Licenses, authorship, and project origin |
 
 ---
 
-## 🧩 Обновление
-- Обновляется вручную при изменениях файлов или после коммитов.  
-- При запуске `status_scan.rs` будет перезаписываться автоматически.  
-- Файлы без статуса считаются **🧩 Draft** по умолчанию.  
+## ⚙ Entry Format
+
+| Field | Meaning |
+|------|---------|
+| **Path** | Absolute or relative path to the file. |
+| **Status** | One of the statuses from [Status System](status_system.md). |
+| **Version** | Current file version. |
+| **Updated** | Date of the latest edit. |
+| **Comment** | Short description of the file purpose or changes. |
 
 ---
 
-## ⚙ Структура автосканирования
+## 🧩 Updating
 
-1. Читает все `.md` и `.rs` файлы.  
-2. Извлекает строки с ключами:  
-   - `Document Status:`  
-   - `Version:`  
-   - `Last update:`  
-3. Обновляет таблицу выше в порядке иерархии папок.  
-4. Сохраняет резервную копию в `/meta/_status_index_backup/`.
+- Updated manually when files change or after commits.
+- When `status_scan.rs` is run, this file will be rewritten automatically.
+- Files without a status are considered **🧩 Draft** by default.
 
 ---
 
-## 🧭 Примечания
+## ⚙ Auto-Scan Structure
 
-- Файл `status_index.md` — **рабочий инструмент**, обновляется чаще, чем `status_system.md`.  
-- Используется для контроля текущего состояния разработки и анализа темпов прогресса.  
-- Перед релизом рекомендуется сверить его с `project_status.md` и `log_20XX.md`.  
-- См. `Status System` для расшифровки статусов.
+1. Reads all `.md` and `.rs` files.
+2. Extracts lines with the following keys:
+   - `Document Status:`
+   - `Version:`
+   - `Last update:`
+3. Updates the table above according to the folder hierarchy.
+4. Saves a backup in `/meta/_status_index_backup/`.
+
+---
+
+## 🧭 Notes
+
+- `status_index.md` is a **working tool** and is updated more often than `status_system.md`.
+- It is used to track the current development state and analyze the pace of progress.
+- Before a release, it is recommended to compare it with `project_status.md` and `log_20XX.md`.
+- See `Status System` for status definitions.
 
 ---

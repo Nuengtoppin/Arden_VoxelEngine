@@ -8,44 +8,46 @@
 
 ---
 
-## 🎯 Назначение
-Определяет универсальную систему статусов для всех модулей и документов проекта **Arden Engine**.  
-Цель — обеспечить единый формат отслеживания прогресса и прозрачность состояния кода, архитектуры и документации.
+## 🎯 Purpose
+
+Defines the universal status system for all modules and documents of the **Arden Engine** project.  
+The goal is to provide a unified format for tracking progress and making the state of code, architecture, and documentation transparent.
 
 ---
 
-## 🧩 Уровни зрелости
+## 🧩 Maturity Levels
+
 🧩 **Draft** → 🔬 **Review** → 🧪 **Stable-Test** → 🧰 **Validated** → 🧱 **Stable** → 🕯 **Archived**
 
 ---
 
-## 📘 Правила применения
+## 📘 Usage Rules
 
-| Этап               | Смысл                                             | Когда применять                                      |
-|--------------------|----------------------------------------------------|------------------------------------------------------|
-| **🧩 Draft**       | Идея, черновик, неполный текст или прототип.      | Любой файл, который только создаётся.                |
-| **🔬 Review**      | Содержимое вычитано, но требует комментариев.     | Когда документ или код готов к проверке.             |
-| **🧪 Stable-Test** | Материал устойчив, тестируется в реальной сборке. | Когда код/архитектура работает, но ещё не валидация. |
-| **🧰 Validated**   | Проверено в MVP, поведение подтверждено.          | После стресс-тестов и интеграций.                    |
-| **🧱 Stable**      | Утверждено как основная версия.                   | Для фундаментальных компонентов и финальных docs.    |
-| **🕯 Archived**    | Устаревший или заменённый файл.                   | Старые ревизии, прошлые варианты.                    |
-
----
-
-## 🧱 Применение по категориям
-
-| Категория | Типичные статусы | Пример файлов |
-|------------|------------------|----------------|
-| **Архитектура (`/docs/ARCHITECTURE`)** | Draft → Review → Stable | `TopologyLogic_Route_Rotation/Rotation.md` |
-| **Исходный код (`/src`)** | Draft → Stable-Test → Validated → Stable | `src/dun/spawn.rs`, `src/physics/mod.rs` |
-| **Документация (`/docs/RU`, `/docs/EN`)** | Draft → Review → Stable | `MVP_0.1.md`, `Glossary.md` |
-| **Meta и управление (`/meta`)** | Draft → Review → Stable | `status_system.md`, `roles_and_structure.md` |
-| **R&D-эксперименты (EQ-Sim, HAOS)** | Draft → Stable-Test | Исследовательские ветки и прототипы |
-| **Архив / История** | Archived | Старые ревизии, предыдущие Roadmap-версии |
+| Stage | Meaning | When to use |
+|------|---------|-------------|
+| **🧩 Draft** | Idea, draft, incomplete text, or prototype. | Any file that is only being created. |
+| **🔬 Review** | Content has been reviewed, but still requires comments. | When a document or code is ready for review. |
+| **🧪 Stable-Test** | Material is stable and being tested in a real build. | When code/architecture works, but has not yet been validated. |
+| **🧰 Validated** | Verified in MVP, behavior confirmed. | After stress tests and integrations. |
+| **🧱 Stable** | Approved as the main version. | For fundamental components and final docs. |
+| **🕯 Archived** | Outdated or replaced file. | Old revisions, previous variants. |
 
 ---
 
-## ⚙ Пример мета-шапки документа
+## 🧱 Usage by Category
+
+| Category | Typical Statuses | Example Files |
+|----------|------------------|---------------|
+| **Architecture (`/docs/ARCHITECTURE`)** | Draft → Review → Stable | `TopologyLogic_Route_Rotation/Rotation.md` |
+| **Source Code (`/src`)** | Draft → Stable-Test → Validated → Stable | `src/dun/spawn.rs`, `src/physics/mod.rs` |
+| **Documentation (`/docs/RU`, `/docs/EN`)** | Draft → Review → Stable | `MVP_0.1.md`, `Glossary.md` |
+| **Meta and Management (`/meta`)** | Draft → Review → Stable | `status_system.md`, `roles_and_structure.md` |
+| **R&D Experiments (EQ-Sim, HAOS)** | Draft → Stable-Test | Research branches and prototypes |
+| **Archive / History** | Archived | Old revisions, previous Roadmap versions |
+
+---
+
+## ⚙ Example Document Meta Header
 
 ```markdown
 **Document Status:** 🧪 Stable-Test  
@@ -54,62 +56,63 @@
 **Reviewed by:** — (name)
 **Last update:** 2025-12-02
 ```
----
-
-## 📊 Сводка и автоматизация
-
- * Сводные данные о статусах собираются вручную или автоматически в
-/meta/status_system.md
-.
-
- * При необходимости можно добавить файл /meta/status_index.md, содержащий таблицу всех документов и их текущих статусов.
-
- * В будущем планируется лёгкий скрипт (Rust/Python), который будет сканировать репозиторий, искать блок Document Status и строить таблицу состояния проекта в реальном времени.
-
-## 📋 Роли в мета-шапке
-
-Каждый документ или кодовый файл содержит в верхней части **мета-шапку**, фиксирующую базовую информацию о его состоянии и ответственности.
-
-### 🧩 Основные поля
-
-| Поле | Назначение | Пример |
-|------|-------------|--------|
-| **Document Status** | Отражает текущее состояние документа согласно системе статусов. | `🧱 Stable` |
-| **Version** | Версия документа или модуля. Используется для контроля изменений. | `0.2.1` |
-| **Maintainer** | Тот, кто отвечает за содержание, актуальность и обновления. | `Nuengtoppin` |
-| **Reviewed by** | Тот, кто проверил или верифицировал документ (человек, команда или инструмент). | `Vitaly S.` / `Nuengtoppin (with GPT-5 assist)` |
-| **Last update** | Дата последнего изменения файла. | `2025-12-02` |
 
 ---
 
-### 🧱 Рекомендации по заполнению
+## 📊 Summary and Automation
 
-| Ситуация | Как оформлять |
-|-----------|---------------|
-| Документ черновой | `Reviewed by: —` |
-| Проверен автором вручную | `Reviewed by: Nuengtoppin` |
-| Проверен при помощи AI-инструмента | `Reviewed by: Nuengtoppin (with GPT-5 assist)` |
-| Проверен другим участником | `Reviewed by: Vitaly S.` |
-| Проверен группой архитекторов или командой | `Reviewed by: Architecture Board` |
-| Проверен автоматически | `Reviewed by: status_scan.rs (auto-check)` |
+- Summary status data is collected manually or automatically in  
+  `/meta/status_system.md`.
+
+- If needed, a `/meta/status_index.md` file can be added, containing a table of all documents and their current statuses.
+
+- In the future, a lightweight script in Rust or Python is planned. It will scan the repository, search for the `Document Status` block, and build a real-time project status table.
 
 ---
 
-### ⚙ Примечания
+## 📋 Roles in the Meta Header
 
-- Поле **Maintainer** определяет владельца ответственности за документ.  
-- Поле **Reviewed by** не передаёт авторских прав и используется **только для прозрачности и отслеживания ревизий**.  
-- Если документ проходит многоуровневую проверку, допускается запись нескольких имён через запятую.  
-- Если проверка выполнялась с помощью инструментов, это следует обозначить явно (пример: *“with GPT-5 assist”*, *“auto-check”*).  
+Each document or code file contains a **meta header** at the top, recording basic information about its state and responsibility.
+
+### 🧩 Main Fields
+
+| Field | Purpose | Example |
+|------|---------|---------|
+| **Document Status** | Reflects the current document state according to the status system. | `🧱 Stable` |
+| **Version** | Version of the document or module. Used for change tracking. | `0.2.1` |
+| **Maintainer** | The person responsible for content, relevance, and updates. | `Nuengtoppin` |
+| **Reviewed by** | The person, team, or tool that reviewed or verified the document. | `Vitaly S.` / `Nuengtoppin (with GPT-5 assist)` |
+| **Last update** | Date of the latest file change. | `2025-12-02` |
 
 ---
 
+### 🧱 Filling Recommendations
 
+| Situation | How to write it |
+|----------|-----------------|
+| Draft document | `Reviewed by: —` |
+| Manually reviewed by the author | `Reviewed by: Nuengtoppin` |
+| Reviewed with the help of an AI tool | `Reviewed by: Nuengtoppin (with GPT-5 assist)` |
+| Reviewed by another participant | `Reviewed by: Vitaly S.` |
+| Reviewed by an architecture group or team | `Reviewed by: Architecture Board` |
+| Automatically checked | `Reviewed by: status_scan.rs (auto-check)` |
 
-## ⚙ Интеграция со статусами файлов
+---
 
-В каждом .md или .rs файле добавляется мета-шапка со статусом.
-Пример для Rust-кода (комментарий в начале файла):
+### ⚙ Notes
+
+- The **Maintainer** field defines who owns responsibility for the document.
+- The **Reviewed by** field does not transfer authorship rights and is used **only for transparency and revision tracking**.
+- If a document goes through multi-level review, multiple names may be written separated by commas.
+- If the review was performed with the help of tools, this should be stated explicitly, for example: *“with GPT-5 assist”*, *“auto-check”*.
+
+---
+
+## ⚙ Integration with File Statuses
+
+Each `.md` or `.rs` file should include a meta header with a status.
+
+Example for Rust code, as a comment at the beginning of the file:
 
 ```markdown
 // Status: 🧪 Stable-Test
@@ -119,19 +122,21 @@
 
 ---
 
- * Документационные файлы всегда используют markdown-шапку (см. пример выше).
- * Файлы без статуса считаются Draft по умолчанию.
- * В будущем при помощи утилиты status_scan.rs можно автоматически собирать список статусов всех файлов и выводить: 
+- Documentation files always use a markdown header, as shown in the example above.
+- Files without a status are considered Draft by default.
+- In the future, the `status_scan.rs` utility can automatically collect the status list of all files and output:
 
-| Путь | Статус | Версия | Дата |
-|-------|---------|---------|------|
+| Path | Status | Version | Date |
+|------|--------|---------|------|
 | src/dun/spawn.rs | 🧪 Stable-Test | 0.2.1 | 2025-12-02 |
 | docs/RU/ARCHITECTURE/Topology.md | 🧱 Stable | 0.2.0 | 2025-11-25 |
 
+---
 
-## 🧭 Примечание
+## 🧭 Note
 
-Статусы формируют единый язык коммуникации между архитекторами, разработчиками и документаторами.
-Файл status_system.md считается нормативным справочником — любые новые обозначения или изменения уровней должны фиксироваться именно здесь.
+Statuses form a shared communication language between architects, developers, and documenters.  
+The `status_system.md` file is considered the normative reference — any new symbols or changes to maturity levels must be recorded here.
 
 ---
+

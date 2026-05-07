@@ -9,16 +9,19 @@
 
 ---
 
-## 🧱 Основные роли проекта
-| Роль | Обязанности | Контакт / Ник |
-|------|--------------|----------------|
-| **Главный архитектор** | Координация архитектурных решений, обзор кода и документации | @Nuengtoppin |
-| **Технический директор (CTO)** | Контроль за компиляцией, CI/CD, Rust-версии и зависимостями | — |
-| **Разработчики (core)** | Работа с модулями `src/dun`, `src/voxel`, `src/render` | — |
-| **Документаторы** | Поддержка `/docs`, глоссарий, синхронизация RU/EN | — |
-| **Community & PR** | Управление GitHub-issues, публикации, баннеры и devlog | — |
+## 🧱 Main Project Roles
 
-## 🗺 Организационная структура
+| Role | Responsibilities | Contact / Nickname |
+|------|------------------|--------------------|
+| **Lead Architect** | Coordination of architectural decisions, code and documentation review | @Nuengtoppin |
+| **Technical Director (CTO)** | Compilation control, CI/CD, Rust versioning, and dependency management | — |
+| **Core Developers** | Work on `src/dun`, `src/voxel`, `src/render` modules | — |
+| **Documenters** | Maintenance of `/docs`, glossary, RU/EN synchronization | — |
+| **Community & PR** | GitHub issues, publications, banners, and devlog management | — |
+
+## 🗺 Organizational Structure
+
+```text
 [Core Engine Layer]
 ├─ Topology / Route / Rotation
 ├─ DUN containers
@@ -27,11 +30,11 @@
 [Documentation Layer]
 ├─ /docs/RU
 ├─ /docs/EN
-└─ /meta (управление проектом)
+└─ /meta (project management)
 
 [Community Layer]
 ├─ Portal / README / Roadmap
 └─ GitHub Discussions / PR Review
+```
 
-> **Примечание:** документ формирует базу для внутренней координации. Дополняется при присоединении новых участников.
-
+> **Note:** this document forms the basis for internal coordination. It will be expanded when new contributors join.

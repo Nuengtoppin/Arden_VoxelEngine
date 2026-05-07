@@ -10,30 +10,34 @@
 
 ---
 
-## 🧭 Цель 2025 года
-Сфокусировать структуру и разработку **MVP 0.1**, завершить формализацию архитектуры и подготовить первые публичные демо-сборки.
+## 🧭 Goal for 2025
 
-## 📅 Календарный фокус — 2025
-| Месяц | Основные задачи | Ключевые результаты |
-|--------|------------------|----------------------|
-| Ноябрь | Финализация документации; корректировки структуры | Консолидация архитектуры 0.1 |
-| Декабрь | Прототип MVP 0.1; Stress Test; Bevy 0.13 | Первое тестовое демо |
+Focus the structure and development of **MVP 0.1**, complete the formalization of the architecture, and prepare the first public demo builds.
 
-> Документ обновляется вручную раз в месяц и отражает текущие приоритеты и смещения в фокусе.
+## 📅 Calendar Focus — 2025
+
+| Month | Main Tasks | Key Results |
+|--------|------------|-------------|
+| November | Finalize documentation; adjust project structure | Consolidated architecture 0.1 |
+| December | MVP 0.1 prototype; Stress Test; Bevy 0.13 | First test demo |
+
+> This document is updated manually once per month and reflects current priorities and focus shifts.
 
 ---
 
-## 🧭 Цель 2026 года
-Перейти от стабилизации к развитию — обновление ядра до **MVP 0.2**, расширение документации и начало публичного продвижения проекта (Rust / Bevy community).
+## 🧭 Goal for 2026
 
-## 📅 Календарный фокус — 2026
-| Месяц | Основные задачи | Ключевые результаты |
-|--------|------------------|----------------------|
-| Январь | Финализация архитектуры; обновление Topology / Route / Rotation | Архитектурный пакет 0.2 |
-| Февраль | Прототип MVP 0.2 – 0.3; опциональная миграция на Bevy 0.17 | Тестовые сцены и отчёты |
-| Март | Проработка EQ-Sim + HAOS архитектуры | Базовая схема оптимизации |
-| Апрель | Публикация обновлённого Roadmap; поиск коллабораторов | Обновлённый README на GitHub |
-| Май | Подготовка к грантовым заявкам (опционально) | Черновик `funding_plan.md` |
+Move from stabilization to development: update the core toward **MVP 0.2**, expand documentation, and begin public promotion of the project in the Rust / Bevy community.
 
-> Документ обновляется вручную раз в месяц; используется для отслеживания хода развития и согласования фокуса между документацией, кодом и архитектурными задачами.
+## 📅 Calendar Focus — 2026
+
+| Month | Main Tasks | Key Results |
+|--------|------------|-------------|
+| January | Finalize architecture; update Topology / Route / Rotation | Architecture package 0.2 |
+| February | MVP 0.2–0.3 prototype; optional migration to Bevy 0.17 | Test scenes and reports |
+| March | Work through EQ-Sim + HAOS architecture | Basic optimization scheme |
+| April | Publish updated Roadmap; search for collaborators | Updated GitHub README |
+| May | Prepare grant applications, optional | Draft `funding_plan.md` |
+
+> This document is updated manually once per month and is used to track development progress and align focus between documentation, code, and architecture tasks.
 

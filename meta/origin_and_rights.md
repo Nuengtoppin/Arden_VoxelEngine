@@ -8,20 +8,24 @@
 **Last update:** 2025-11-30
 ---
 
-## 🏛 Происхождение проекта
-Arden_VoxelEngine — открытая исследовательская платформа, начатая @Nuengtoppin в 2024 году  
-с целью изучения гибридных воксель-векторных архитектур на Rust + Bevy.
+## 🏛 Project Origin
 
-## 📄 Лицензии
-| Тип контента | Лицензия | Путь |
-|---------------|-----------|------|
-| Исходный код | MIT / Apache-2.0 | `/LICENSE-MIT`, `/LICENSE-APACHE` |
-| Документация | CC-BY-4.0 | `/LICENSE-CC-BY` |
-| Медиа-активы | CC-BY-SA 4.0 | `/assets/` |
+**Arden_VoxelEngine** is an open research platform started by @Nuengtoppin in 2024  
+with the goal of studying hybrid voxel-vector architectures using Rust + Bevy.
 
-## 🔗 Внешние источники
-- Вдохновлено исследованиями **Teardown**, **Atomontage**, **Veloren**.  
-- Использует фреймворк **Bevy** (MIT лицензия).  
-- Упоминания и цитаты сопровождаются ссылками в `/docs/TERMS/Comparisons.md`.
+## 📄 Licenses
 
-> **Примечание:** документ предназначен для прозрачной фиксации авторства и защиты прав открытого кода.
+| Content Type | License | Path |
+|--------------|---------|------|
+| Source code | MIT / Apache-2.0 | `/LICENSE-MIT`, `/LICENSE-APACHE` |
+| Documentation | CC-BY-4.0 | `/LICENSE-CC-BY` |
+| Media assets | CC-BY-SA 4.0 | `/assets/` |
+
+## 🔗 External Sources
+
+- Inspired by research and projects such as **Teardown**, **Atomontage**, and **Veloren**.  
+- Uses the **Bevy** framework, licensed under MIT.  
+- Mentions and quotes are accompanied by links in `/docs/TERMS/Comparisons.md`.
+
+> **Note:** this document is intended to transparently record authorship and protect the rights of the open-source code.
+

@@ -1,6 +1,3 @@
-# 🧭 Meta Overview
-
----
 **Document Status:** 🧱 Stable  
 **Version:** 1.0.0  
 **Maintainer:** Nuengtoppin  
@@ -9,74 +6,66 @@
 
 ---
 
-## 📘 Назначение
-Папка `/meta` служит административным центром проекта **Arden Engine**.  
-Здесь фиксируются цели, статусы разработки, организационная структура и документационные стандарты.  
-Все документы в этой папке поддерживают общую систему статусов и обновляются вручную.
+# 🧭 Meta Overview
 
 ---
 
-## 📂 Содержание
+## 📘 Purpose
 
-| Файл | Назначение |
-|------|-------------|
-| [`focus_2025.md`](focus_2025.md) | Годовые приоритеты, план фокуса и задачи на 2025–2026 |
-| [`log_2025.md`](log_2025.md) | Исторический журнал изменений и ключевых событий 2025 года |
-| [`log_2026.md`](log_2026.md) | Продолжение журнала разработки 2026 года |
-| [`project_status.md`](project_status.md) | Сводное состояние MVP, архитектуры, документации и кода |
-| [`roles_and_structure.md`](roles_and_structure.md) | Роли участников, организационные слои и структура ответственности |
-| [`origin_and_rights.md`](origin_and_rights.md) | Происхождение проекта, лицензии и распределение прав |
-| [`status_system.md`](status_system.md) | Нормативный справочник по статусам документов |
-| [`status_index.md`](status_index.md) | Реестр актуальных статусов всех файлов проекта |
+The `/meta` folder serves as the administrative center of the **Arden Engine** project.  
+It records goals, development statuses, organizational structure, and documentation standards.  
+All documents in this folder follow the shared status system and are updated manually.
 
 ---
 
-## 🧰 Регламент обновлений
+## 📂 Contents
 
-| Файл | Периодичность обновления | Ответственный |
-|------|----------------------------|----------------|
-| `focus_2025.md` | Раз в месяц | Maintainer |
-| `log_2025.md` / `log_2026.md` | По мере ключевых событий | Maintainer |
-| `project_status.md` | Раз в месяц | Maintainer / Architecture Board |
-| `status_index.md` | Раз в квартал или перед релизом | Maintainer |
-| `status_system.md` | По мере изменения политики статусов | Maintainer |
-| `roles_and_structure.md` | При изменении состава команды | Maintainer |
-| `origin_and_rights.md` | При изменении лицензий или юридических условий | Maintainer |
+| File | Purpose |
+|------|---------|
+| [`focus_2025.md`](focus_2025.md) | Focus and priorities for 2025–2026 RU |
+| [`project_status.md`](project_status.md) | Current project status RU |
+| [`log_2025.md`](../log_2025.md) | 2025 event log EN |
+| [`log_2026.md`](../log_2026.md) | 2026 event log EN |
+| [`status_index.md`](../status_index.md) | File status index EN |
+| [`status_system.md`](status_system.md) | Status system reference RU |
+| [`origin_and_rights.md`](../origin_and_rights.md) | Authorship and licenses EN |
+| [`roles_and_structure.md`](../roles_and_structure.md) | Roles and structure EN |
 
----
-
-## ⚙ Принципы ведения `/meta`
-
-1. Все файлы должны иметь мета-шапку:
-   ```markdown
-   **Document Status:** 🧩 Draft  
-   **Version:** 0.1.0  
-   **Maintainer:** Nuengtoppin  
-   **Reviewed by:** —  
-   **Last update:** YYYY-MM-DD
-
-2. Статусы документов определяются в [`status_system.md`](status_system.md).
-3. Сводная таблица актуальных файлов ведётся в [`status_index.md`](status_index.md).
-4. Все изменения фиксируются в логах (`log_2025.md`, `log_2026.md`).
-5. `/meta` всегда синхронизируется с `/docs` и отражает текущее состояние проекта.
+> **Note:**  
+> Some documents are maintained in two languages.  
+> Russian versions are located in `/meta/RU/`, while English versions are located in the root `/meta/`.
 
 ---
 
-## 🧱 Цель `/meta`
+## 🧰 Update Policy
 
-Создать **прозрачный административный слой** Arden Engine, обеспечивающий:
-
-* единый стандарт оформления документов;
-* контроль прогресса и зрелости модулей;
-* историчность и прослеживаемость всех изменений;
-* готовность проекта к открытой коллаборации и R&D-развитию.
+| File | Update Frequency | Responsible |
+|------|------------------|-------------|
+| `focus_2025.md` | Once per month | Maintainer |
+| `log_2025.md` / `log_2026.md` | As key events happen | Maintainer |
+| `project_status.md` | Once per month | Maintainer / Architecture Board |
+| `status_index.md` | Once per quarter or before release | Maintainer |
+| `status_system.md` | When status policy changes | Maintainer |
+| `roles_and_structure.md` | When team composition changes | Maintainer |
+| `origin_and_rights.md` | When licenses or legal terms change | Maintainer |
 
 ---
 
-## 🧭 Примечание
+## 🧱 Purpose of `/meta`
 
-Папка `/meta` выполняет роль **центра управления**.
-Все стратегические, организационные и аналитические материалы должны размещаться именно здесь.
-Для расшифровки статусов см. [Status System](status_system.md).
+Create a **transparent administrative layer** for Arden Engine that provides:
+
+- a unified documentation format standard;
+- progress and maturity tracking for modules;
+- history and traceability of all changes;
+- readiness for open collaboration and R&D development.
+
+---
+
+## 🧭 Note
+
+The `/meta` folder acts as a **control center**.  
+All strategic, organizational, and analytical materials should be placed here.  
+For status definitions, see [Status System](status_system.md).
 
 ---
