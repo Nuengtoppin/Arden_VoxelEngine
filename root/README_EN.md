@@ -6,89 +6,124 @@
 
 ---
 
-## 📘 **Overview**
+````md
+# Arden Engine — Extended Description
 
-**Arden Engine** is a research-driven project aimed at creating a hybrid game engine  
-that unites voxel structure, vector geometry, and a modular architecture built on **Rust + Bevy**.
+## What it is
 
-The goal of the project is to develop a stable core that serves as a platform  
-for experiments, simulations, and the construction of procedural worlds.  
-One of Arden’s key missions is to **bring together many independent ideas and prototypes**  
-into a unified research environment where different approaches can coexist,  
-enriching and evolving one another.  
+**Arden Engine** is an open R&D project built with **Rust + Bevy** for exploring the architecture of a hybrid voxel / mesh engine.
 
-The project is intended to become a space where experiments — whether in physics,  
-voxel systems, generation, or optimization — find a place within a shared context.  
-It does not seek to compete with other engines, but rather to **collect experience and refine solutions**,  
-to organize and evolve what has long existed in fragments.  
-
-Unlike typical game engines, **Arden** is being developed  
-not as a finished product but as a **framework for engine design** —  
-a tool for exploring, testing, and developing new algorithms and concepts.
+The project is not a finished game engine yet. It is an experimental codebase where I gradually build the core, test ideas in lab scenes, and document technical decisions along the way.
 
 ---
 
-The project consolidates existing ideas and practices from the industry,  
-drawing inspiration from their strengths while avoiding outdated principles.  
-The vision is to build a **“clean architecture”**, free from technical compromises  
-and the accumulated limitations of large AAA engines.  
-Arden is being built “from a clean slate” — a chance to rethink the very foundation of the engine,  
-where each module is designed transparently, with an emphasis on readability, modularity, and research value.
+Status: **early experimental development**.
 
-The main distinction of **Arden** lies in its open R&D structure,  
-where documentation, code, and architectural decisions evolve together.  
-It is conceived as a long-term foundation for engineering and scientific exploration,  
-where developers can not only use the engine but also contribute to its growth.
+The current code can be launched and tested, but it should not be treated as a stable API, editor, or production-ready engine.  
+Some decisions are temporary, some modules will be rewritten, and some old MVP traces are kept as historical context.
 
 ---
 
-## 🧠 **Philosophy and Concept**
+## Why this project exists
 
-The idea was born from frustration with cumbersome systems and “black boxes”  
-where the developer fights not with the task, but with the engine itself.  
-Modern tools often lack transparency — processes are hidden, logs are uninformative,  
-and internal connections remain closed.
+Arden is my practical lab for studying engine architecture.  
+Not just reading how things work, but building live code, running into structural mistakes, seeing temporary workarounds, and gradually extracting a working system from that process.
 
-**Arden** is designed as an architecture open to observation and understanding.  
-Every module should be transparent, logged, and analyzable.  
-Thus, the engine becomes not a puzzle-box of abstractions,  
-but a living system — one that can be studied, modified, and improved.
+The main interest of the project is the idea of a hybrid world: voxel data, mesh representation, spatial truth, debug tools, and future runtime layers should not exist as isolated parts, but as pieces of one understandable architecture.
 
-It was created as an attempt to restore meaning and coherence to the concept of a game engine:  
-to unite the precision of voxels with the expressiveness of polygons,  
-to find balance between physics, structure, and visual form.  
-An engine where logic and design complement rather than contradict each other;  
-where replacing a module doesn’t break the system — it simply adapts.
-
-This is not an attempt to compete with existing engines,  
-but rather to collect the best of what they offer — stripped of unnecessary complexity.  
-**Arden Engine** is a search for honest architecture:  
-one where both the engineer and the artist feel  
-that they work not against the system, but together with it.
+Documentation is part of the development process here. It is not just a showcase; it keeps track of what already works, what is still raw, why a decision appeared, and what is expected to change later.
 
 ---
 
-### **Why “Arden” and what the cube symbolizes**
+## Short philosophy
 
-The name **Arden** comes from the Old English word meaning *“refuge”* or *“sanctuary”*.  
-It reflects the essence of the project — to create an environment  
-where ideas, technologies, and experiments can evolve freely,  
-without the weight of legacy constraints or forced compromises.
+Arden should not be a “black box”.
 
-**The Arden Cube** represents stability and structure.  
-It reminds us that even within complex systems, there must be a clear foundation —  
-a geometric order from which structure and harmony emerge.  
-The cube unites simplicity, symmetry, and depth — just like the engine itself.
+Core principles:
 
-> *Arden — a refuge for architecture and ideas.*
+- **observability** — internal states should be visible;
+- **modularity** — each layer should have a clear responsibility;
+- **verifiability** — architecture should be confirmed in a live scene;
+- **honest state tracking** — temporary solutions, raw code, and future rewrites are documented instead of hidden.
 
 ---
 
-> 📘 Terms and definitions — see [**Glossary**](../docs/EN/TERMS/Glossary.md).  
-Read this first for clarity on key terminology.
+> 📘 Terms and definitions are available in the [**Glossary**](../docs/EN/TERMS/Glossary.md).  
+> It is useful to read it before going deeper into the project structure.
 
-> 📖 For a broader view of the project — see [**Concept**](../docs/EN/CONCEPT/README.md).  
-This section contains the engine’s early ideas and conceptual groundwork.
+> 📖 For the broader project concept, see [**Concept**](../docs/EN/CONCEPT/readme.md).  
+> It contains the general ideas behind the engine without going too deep into implementation details.
+
+---
+
+## Quick Start
+
+From the repository root:
+
+```bash
+cargo run
+````
+
+## What you can try now
+
+The current lab scene allows you to test:
+
+* fly camera;
+* debug HUD;
+* machine / human notation;
+* spatial probe;
+* pinned target;
+* layered gizmos;
+* finite voxel sandbox;
+* Paint / Erase;
+* SelectBox;
+* Fill / Delete volume;
+* Clipboard copy/paste;
+* save/load lab snapshot.
+
+## Controls
+
+### Camera
+
+| Input                 | Action                         |
+| --------------------- | ------------------------------ |
+| `W / A / S / D`       | move camera                    |
+| `Space`               | move up                        |
+| `Left Ctrl`           | move down                      |
+| `Shift`               | faster movement                |
+| `Right Mouse`         | rotate camera                  |
+| `Shift + Mouse Wheel` | move camera forward / backward |
+
+### Debug / HUD
+
+| Input               | Action                          |
+| ------------------- | ------------------------------- |
+| `F1`                | toggle HUD                      |
+| `F2`                | toggle gizmos                   |
+| `PageUp / PageDown` | switch debug lens               |
+| `F3`                | switch machine / human notation |
+| `F4`                | switch compact / detailed view  |
+| `Q`                 | pin current inspect target      |
+| `E`                 | clear pinned target             |
+
+### Lab Tools
+
+| Input        | Action                 |
+| ------------ | ---------------------- |
+| `1`          | Inspect                |
+| `2`          | SelectBox              |
+| `3`          | Paint                  |
+| `4`          | Erase                  |
+| `Left Mouse` | apply current tool     |
+| `F`          | fill selected volume   |
+| `Delete`     | delete selected volume |
+| `C`          | copy selected volume   |
+| `V`          | paste clipboard volume |
+| `F5`         | save lab snapshot      |
+| `F9`         | load lab snapshot      |
+
+> Editing tools work in **Edit mode**.
+> The mode can be switched through the HUD.
 
 ---
 

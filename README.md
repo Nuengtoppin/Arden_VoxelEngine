@@ -23,22 +23,10 @@
 
 ## 🚀 **Overview EN**
 
-**Arden Engine** is a next-generation hybrid game engine built on **Rust + Bevy**,  
-designed as an open **research & development architecture (R&D Architecture)**  
-for studying procedural worlds, adaptive physics, and voxel simulations.
+**Arden Engine** is an open R&D project built with **Rust + Bevy**, and a personal lab for exploring the architecture of a hybrid voxel / mesh engine.
 
-At its core lies the concept of a **living kernel**,  
-where topology, logic, and world structure evolve organically  
-without breaking internal symmetry.  
-Arden is not just a game engine — it is an engineering environment  
-for testing ideas, exploring material behavior, optimization, and data routing.
-
-Arden combines engineering precision with the flexibility of a research platform,  
-where every module functions as part of a unified architectural system.
-
-The project’s goal is to create a foundation resilient to technological change and time,  
-while remaining open to developers, students, and enthusiasts  
-interested in exploring the mechanics of hybrid worlds and dynamic geometry.
+Arden is not a production-ready game engine yet.  
+It is a living research codebase: I gradually build the architecture, test ideas in lab scenes, document decisions, and keep track of what already works, what is still raw, and what is expected to change later.
 
 🌍 **Language:**
 
@@ -51,21 +39,11 @@ interested in exploring the mechanics of hybrid worlds and dynamic geometry.
 
 ## 🚀 **Overview RU**
 
-**Арден** — гибридный игровой движок нового поколения на **Rust + Bevy**,  
-созданный как открытая исследовательская архитектура (**R&D Architecture**)  
-для изучения процедурных миров, адаптивной физики и воксельных симуляций.
+**Arden Engine** — открытый R&D-проект на **Rust + Bevy** и личная лаборатория по архитектуре гибридного voxel / mesh движка.
 
-В основе Arden лежит идея **живого ядра**, где топология, логика и структура мира  
-могут развиваться эволюционно — без нарушения внутренней симметрии.  
-Это не просто движок для игр, а инженерная среда для тестирования идей,  
-в которой исследуются поведение материи, оптимизация и маршрутизация данных.
+Arden пока не является готовым игровым движком.  
+Это живая исследовательская кодовая база: я постепенно собираю архитектуру, проверяю идеи в lab-сценах, фиксирую решения в документации и оставляю след того, что уже работает, что сырое и что будет меняться дальше.
 
-Арден сочетает инженерную строгость с гибкостью исследовательской платформы,  
-где каждый модуль является частью единой архитектурной системы.
-
-Цель проекта — создать основу, устойчивую к изменениям технологий и времени,  
-и при этом открытую для внешних разработчиков, студентов и энтузиастов,  
-желающих изучать механику гибридных миров и динамическую геометрию.
 
 🌍 **Язык:**
 
