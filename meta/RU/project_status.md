@@ -23,16 +23,15 @@
 
 ```text
 Spatial Truth -> Pre-DUN Lab Sandbox -> DUN Stage -> EQ/HAOS
-````
+```
 
-Текущий rebuild фиксирует первые два рабочих слоя:
+Текущий rebuild фиксирует первые три рабочих слоя:
 
 ```text
 Step 1 — Spatial Truth Foundation
 Step 2 — Pre-DUN Finite Lab Sandbox
+Step 3 / DUN Stage
 ```
-
-Step 3 / DUN Stage будет описан отдельным следующим проходом.
 
 ### Current Rebuild Documents
 
@@ -49,28 +48,57 @@ Step 3 / DUN Stage будет описан отдельным следующим
 
 ---
 
-## 🔄 Historical Snapshot — декабрь 2025
+## 🔄 Current Snapshot — май 2026
 
-| Подсистема                      | Состояние | Прогресс | Комментарий                             |
-| ------------------------------- | --------- | -------- | --------------------------------------- |
-| **Topology / Route / Rotation** | 🔬 Review | 80%      | Финализирована структура координат      |
-| **DUN (Dynamic Unit Node)**     | 🔬 Review | 30%      | Тестируется спавн и контейнерная логика |
-| **Physics Base**                | 🧩 Draft  | 10%      | Прототип без финальных интеграций       |
-| **Rendering Layer**             | 🧩 Draft  | 20%      | Планируется связка с Bevy 0.13          |
-| **EQ-Core / HAOS**              | 🧩 Draft  | 10%      | Подготовка R&D описания                 |
-| **Docs (RU/EN)**                | 🔬 Review | 60%      | Синхронизация архитектуры и терминов    |
-| **Meta System**                 | 🧱 Stable | 100%     | Структура и статусы утверждены          |
+| Подсистема / слой | Состояние | Прогресс | Комментарий |
+| ----------------- | --------- | -------- | ----------- |
+| **Spatial Truth Foundation** | 🧪 Stable-Test | 85% | Работают `Topology / Routing / Mapping`, `RuntimePosition`, `DensityKey`, `SimSectorKey`, `FullRoute`, probe/HUD/gizmos. Нужны дальнейшие тесты и doc/code sync. |
+| **Pre-DUN Finite Lab Sandbox** | 🧪 Stable-Test | 80% | Работают finite lab world, Edit/Runtime mode, Paint/Erase, SelectBox, Fill/Delete, chunk-aware volume backend, Copy/Paste, Save/Load snapshot. |
+| **Pre-DUN UnitNode Bridge** | 🧪 Stable-Test | 60% | Работает цикл `World -> Object -> Move / Rotate -> Bake back`: `LabVoxelObject`, object registry, object render preview, C4 orientation, rotated bake, save/load objects. |
+| **DUN Stage** | 🧩 Draft | 25% | Документально существует DUN-канон, но актуальный runtime-код ещё не оформлен как полноценный DUN layer. Следующий крупный архитектурный этап. |
+| **Render Layer** | 🧩 Draft | 35% | Есть временный lab render path для world chunks и object preview. Render не является source of truth и позже требует rebuild policy. |
+| **Physics / Collider Layer** | 🧩 Draft | 10% | Rapier подключён, но DUN/object collider pipeline ещё не интегрирован в текущий workflow. |
+| **EQ-Core / HAOS / DTO** | 🧩 Draft | 10% | Пока концептуальный следующий слой после DUN Stage. Runtime orchestration, sleep/awake, rebuild scheduling и optimization policy ещё впереди. |
+| **Docs RU** | 🔬 Review | 65% | RU-документы перестраиваются под новый порядок MVP. Step 1/2/3 описаны, DUN Stage и Concept refresh ещё впереди. |
+| **Docs EN** | 🧩 Draft | 25% | EN-синхронизация отложена до стабилизации RU-канона и текущего MVP rebuild. |
+| **Meta System** | 🧱 Stable | 100% | Система статусов и meta-структура остаются нормативной основой проекта. |
 
 ---
 
-## 🧩 Historical MVP Plan — декабрь 2025
+## 🧩 Current MVP Plan — май 2026
 
-| Этап    | Цель                                     | Состояние      | Целевая дата |
-| ------- | ---------------------------------------- | -------------- | ------------ |
-| **0.1** | Экспериментальный прототип, Stress Test  | 🧩 Draft       | 2025-12      |
-| **0.2** | Интеграция топологии, добавление модулей | 🔬 Review      | 2026-02      |
-| **0.3** | Отладка, добавление DTO / HAOS v0.1      | 🧪 Stable-Test | 2026-04      |
-| **0.4** | Публичное демо, GitHub release           | 🧰 Validated   | 2026-05      |
+| Этап | Цель | Состояние | Комментарий |
+| ---- | ---- | --------- | ----------- |
+| **MVP 1** | Spatial Truth Foundation | 🧪 Stable-Test | Пространственная истина, address/mapping layer, probe, HUD, layered gizmos. |
+| **MVP 2** | Pre-DUN Finite Lab Sandbox | 🧪 Stable-Test | Управляемая voxel sandbox: edit tools, selection, volume backend, clipboard, save/load. |
+| **MVP 3** | Pre-DUN UnitNode Bridge | 🧪 Stable-Test | Extract Copy/Cut, object registry, object move, C4 rotation, save/load objects, rotated bake back. |
+| **MVP 4** | DUN Stage | 🧩 Draft | Полноценный DUN contract в runtime: Static/Dynamic DUN, anchor, transform bridge, mesh/collider pipeline. |
+| **MVP 5** | EQ / HAOS / Runtime Orchestration | 🧩 Draft | EQ-Core/EQ-Sim boundary, DTO, HAOS, rebuild queues, runtime scheduling. |
+| **MVP 6** | Stable Research Build | 🧩 Draft | Cleanup, demo scene, RU/EN docs sync, public-facing R&D build, contribution readiness. |
+
+---
+
+## 🕯 Historical Note — декабрь 2025
+
+Декабрьская модель MVP0 сохраняется как historical reference.
+
+Старый порядок был ближе к:
+
+```text
+DUN prototype -> physics check -> stress test
+```
+
+Текущий активный порядок заменён на:
+
+```text
+Spatial Truth
+-> Pre-DUN Lab Sandbox
+-> Pre-DUN UnitNode Bridge
+-> DUN Stage
+-> EQ/HAOS
+```
+
+Старые таблицы December 2025 больше не используются как активный план разработки.
 
 ---
 

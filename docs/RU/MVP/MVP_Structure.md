@@ -86,7 +86,7 @@ DUN возвращается позже как отдельный stage пове
 
 ## 🧩 MVP Current Rebuild
 
-**Status:** 🧩 Draft / Active
+**Status:** 🧩 Draft / Active  
 **Document:** [`MVP_Current_Rebuild.md`](./MVP_Current_Rebuild.md)
 
 ### Purpose
@@ -94,22 +94,23 @@ DUN возвращается позже как отдельный stage пове
 Зафиксировать текущий общий rebuild кодовой базы и документации после перехода от DUN-first MVP0 к новой последовательности:
 
 ```text
-Spatial Truth -> Pre-DUN Lab Sandbox -> DUN Stage -> EQ/HAOS
+Spatial Truth -> Pre-DUN Lab Sandbox -> Pre-DUN UnitNode Bridge -> DUN Stage -> EQ/HAOS
 ```
 
 ### Includes
 
-Текущий rebuild описывает первые два рабочих слоя:
+Текущий rebuild описывает первые три рабочих слоя:
 
 ```text
 Step 1 — Spatial Truth Foundation
 Step 2 — Pre-DUN Finite Lab Sandbox
+Step 3 — Pre-DUN UnitNode Bridge
 ```
 
-А также оставляет место для следующего прохода:
+А также оставляет место для следующего полноценного DUN-прохода:
 
 ```text
-Step 3 — DUN Stage
+Step 4 — DUN Stage
 ```
 
 ### Comment
@@ -127,7 +128,7 @@ Step 3 — DUN Stage
 
 ## 🧩 MVP 1 — Spatial Truth Foundation
 
-**Status:** Draft / active base
+**Status:** Draft / active base  
 **Detailed document:** later, if needed
 
 ### Purpose
@@ -156,7 +157,7 @@ Step 3 — DUN Stage
 
 ## 🧩 MVP 2 — Pre-DUN Finite Lab Sandbox
 
-**Status:** Draft / active
+**Status:** Draft / active  
 **Detailed document:** later, if needed
 
 ### Purpose
@@ -182,14 +183,58 @@ Step 3 — DUN Stage
 
 ---
 
-## 🧩 MVP 3 — DUN Stage
+## 🧩 MVP 3 — Pre-DUN UnitNode / DUN Bridge
 
-**Status:** planned / next rebuild pass
+**Status:** Draft / active local checkpoint  
+**Detailed document:** [`MVP_Current_Rebuild.md`](./MVP_Current_Rebuild.md)
+
+### Purpose
+
+Проверить переход от мировой voxel-сетки к отдельной object/unit-node массе до полноценного DUN.
+
+Этот слой не является финальным DUN.
+Он нужен как подготовительный мост:
+
+```text
+World voxels -> Local payload object -> Unit movement -> C4 orientation -> Bake back
+```
+
+### Includes
+
+* `LabVoxelObject`;
+* local `VoxelPayload`;
+* `LabObjectRegistry`;
+* Extract Copy / Cut;
+* object render preview;
+* object bounds / pivot gizmo;
+* selected object switching;
+* selected object delete;
+* object movement as one unit;
+* object save/load inside lab snapshot;
+* C4 orientation state;
+* C4 yaw preview;
+* rotated bake back to world.
+
+### Result
+
+Проект получает первый рабочий pre-DUN workflow:
+
+```text
+World -> Object -> Move / Rotate -> World
+```
+
+Это подготавливает будущий DUN Stage, но не заменяет его.
+
+---
+
+## 🧩 MVP 4 — DUN Stage
+
+**Status:** planned / next architecture stage  
 **Detailed document:** later
 
 ### Purpose
 
-Ввести DUN как слой поверх уже работающей spatial truth и lab sandbox.
+Ввести DUN как runtime/container-слой поверх уже работающей spatial truth, lab sandbox и pre-DUN UnitNode bridge.
 
 ### Planned
 
@@ -199,15 +244,16 @@ Step 3 — DUN Stage
 * route anchor;
 * runtime transform bridge;
 * generated mesh/collider pipeline;
-* DUN documentation refresh.
+* DUN documentation refresh;
+* eventual quaternion transform for Dynamic DUN.
 
 ### Result
 
-DUN становится не первым фундаментом MVP, а следующим runtime/container-слоем поверх проверенной spatial architecture.
+DUN становится не первым фундаментом MVP, а следующим runtime/container-слоем поверх проверенной spatial architecture и object workflow.
 
 ---
 
-## 🧩 MVP 4 — EQ / HAOS / Runtime Orchestration
+## 🧩 MVP 5 — EQ / HAOS / Runtime Orchestration
 
 **Status:** planned
 
@@ -227,7 +273,7 @@ DUN становится не первым фундаментом MVP, а сле
 
 ---
 
-## 🧩 MVP 5 — Stable Research Build
+## 🧩 MVP 6 — Stable Research Build
 
 **Status:** planned
 
@@ -249,7 +295,8 @@ DUN становится не первым фундаментом MVP, а сле
 ## 🧰 Current TODO
 
 * Дочистить `MVP_Current_Rebuild.md` по текущему состоянию `src`.
-* После текущего среза добавить описание Step 3 / DUN Stage.
+* Step 3 / Pre-DUN UnitNode Bridge описан в текущем rebuild.
+* Позже оформить полноценный DUN Stage отдельным проходом.
 * Позже пометить `MVP_0.1.md` как historical / archived.
 * Синхронизировать `meta/log_2026.md`.
 * Позже обновить `meta/RU/project_status.md`.

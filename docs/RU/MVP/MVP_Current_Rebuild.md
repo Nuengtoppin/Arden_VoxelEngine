@@ -255,19 +255,25 @@ DUN lens пока является stub и будет подключаться �
 
 ## Зачем добавлен
 
-Render layer нужен для отображения текущего `LabVoxelWorld`.
+Render layer нужен для отображения текущих lab-данных.
 
 Render не является source of truth.
 Истина хранится в lab/core слоях, а render только строит визуальное представление.
+
+На текущем этапе render обслуживает два lab-источника:
+
+* `LabVoxelWorld` как world chunk storage;
+* `LabVoxelObject` как pre-DUN object preview.
 
 ---
 
 ## Source files
 
-| File                             | Role                                |
-| -------------------------------- | ----------------------------------- |
-| `src/render/mesh_builder.rs`     | `VoxelGrid -> Bevy Mesh`            |
-| `src/render/lab_chunk_render.rs` | chunk render rebuild from lab world |
+| File                              | Role                                           |
+| --------------------------------- | ---------------------------------------------- |
+| `src/render/mesh_builder.rs`      | `VoxelGrid -> Bevy Mesh`                       |
+| `src/render/lab_chunk_render.rs`  | chunk render rebuild from lab world            |
+| `src/render/lab_object_render.rs` | object render preview from `LabVoxelObject`    |
 
 ---
 
@@ -284,26 +290,120 @@ Render не является source of truth.
 
 ---
 
-# 6. DUN Bridge / Future Prep
+# 6. Pre-DUN UnitNode Bridge
+
+## Зачем добавлен
+
+Pre-DUN UnitNode Bridge нужен как первый практический мост между мировой voxel-сеткой и будущей DUN-моделью.
+
+Этот слой ещё не является полноценным DUN.
+
+Он нужен, чтобы проверить ключевую идею:
+
+```text
+world voxels
+-> extracted local voxel object
+-> move / rotate as one unit
+-> bake back into world
+```
+
+То есть выделенная voxel-масса перестаёт быть только частью `LabVoxelWorld` и может временно жить как отдельный object payload.
+
+---
+
+## Что входит
+
+* `LabVoxelObject`;
+* `VoxelPayload`;
+* `LabObjectRegistry`;
+* Extract Copy;
+* Extract Cut;
+* selected object switching;
+* selected object delete;
+* object bounds / pivot gizmo;
+* object render preview;
+* object move as one unit;
+* C4 object orientation state;
+* C4 yaw preview;
+* rotated bake back to `LabVoxelWorld`;
+* save/load detached objects inside lab snapshot.
+
+---
+
+## Source files
+
+| File                              | Role                                                |
+| --------------------------------- | --------------------------------------------------- |
+| `src/lab/object.rs`               | extracted voxel objects, registry, move/rotate/bake |
+| `src/lab/save.rs`                 | lab snapshot with world chunks + objects            |
+| `src/lab/gizmos.rs`               | object bounds and pivot gizmos                      |
+| `src/lab/hud.rs`                  | object summary and controls                         |
+| `src/render/lab_object_render.rs` | object render preview                               |
+
+---
+
+## Current workflow
+
+```text
+SelectBox
+-> Shift+X Extract Cut
+-> LabVoxelObject
+-> move object as unit
+-> rotate C4 orientation
+-> save/load object
+-> bake rotated content back to world
+```
+
+`X` creates an object copy and keeps the original world voxels.
+
+`Shift+X` creates an object and removes the source voxels from `LabVoxelWorld`.
+
+`B` bakes the selected object payload back into `LabVoxelWorld`.
+
+---
+
+## Status
+
+Рабочий pre-DUN bridge layer.
+
+Это не финальный DUN contract, а промежуточная площадка для проверки object/payload workflows.
+
+---
+
+## Important limitations
+
+* object layer пока lab-level;
+* object selection временная;
+* object render preview временный;
+* C4 rotation поддержана только как yaw orientation;
+* arbitrary quaternion Dynamic DUN rotation ещё не реализован;
+* object physics/collider ещё не подключены;
+* save/load остаётся lab snapshot, не production format;
+* UI/HUD требует window rebuild.
+
+---
+
+# 7. DUN Stage / Future Prep
 
 ## Зачем оставлено
 
-DUN пока не активный фундамент текущего MVP.
-
-Он остаётся следующим stage после:
+DUN теперь вводится не как первый фундамент MVP, а как следующий runtime/container stage поверх уже проверенных слоёв:
 
 ```text
 Spatial Truth
 -> Pre-DUN Lab Sandbox
+-> Pre-DUN UnitNode Bridge
+-> DUN Stage
 ```
 
 ---
 
 ## Сейчас
 
-* DUN lens существует как будущая точка подключения.
+* UnitNode workflow уже проверяет extract / move / rotate / bake.
+* DUN lens пока остаётся future hook.
 * Старая DUN-first документация пока может оставаться как historical reference.
-* Реальный DUN stage будет оформляться позже.
+* Реальный DUN stage должен быть оформлен после текущего pre-DUN bridge.
 
 ---
 
@@ -331,6 +431,9 @@ Spatial Truth
 * Часть старой документации всё ещё описывает DUN-first порядок.
 * Часть структуры `src` ещё может отражать старую MVP0-логику.
 * MVP-документация ещё не полностью синхронизирована с текущим code state.
+* Pre-DUN UnitNode object layer пока lab-level и требует дальнейшего DUN-contract cleanup.
+* Object render preview пока debug/runtime preview, не финальный DUN render pipeline.
+* C4 object rotation работает для yaw preview и rotated bake, но не является Dynamic DUN quaternion rotation.
 
 ---
 

@@ -106,27 +106,71 @@
 **Результат:**  
 проект получает управляемую pre-DUN песочницу, где можно проверять spatial truth, voxel editing, volume operations, payload workflows и будущую подготовку к DUN.
 
-## 🧩 Phase 3 — DUN Stage
+## 🧩 Phase 3 — Pre-DUN UnitNode Bridge
 
 **Цель:**  
-ввести DUN как слой поверх уже работающей spatial truth и lab sandbox.
+проверить object/payload workflow между finite lab sandbox и будущим DUN Stage.
+
+Этот слой не является полноценным DUN runtime.  
+Он нужен как практический мост:
+
+```text
+World voxels -> UnitNode object -> move / rotate -> bake back to world
+```
+
+**Содержание:**
+
+- extract selected voxel mass into local payload object;
+- `LabVoxelObject`;
+- `VoxelPayload`;
+- `LabObjectRegistry`;
+- Extract Copy / Cut;
+- selected object switching;
+- selected object delete;
+- object render preview;
+- object bounds / pivot gizmo;
+- object movement as one unit;
+- lab snapshot save/load for detached objects;
+- C4 orientation state;
+- C4 yaw preview;
+- rotated bake back into `LabVoxelWorld`.
+
+**Результат:**  
+проект получает первый рабочий цикл:
+
+```text
+World voxels -> UnitNode object -> move / rotate -> bake back to world
+```
+
+Этот слой остаётся pre-DUN и не является финальным DUN runtime.
+
+---
+
+## 🧩 Phase 4 — DUN Stage
+
+**Цель:**  
+ввести DUN как слой поверх уже работающей spatial truth, lab sandbox и pre-DUN UnitNode bridge.
 
 **Содержание:**
 
 - обновление DUN-документации под актуальный MVP-канон;
 - DUN lens contract;
 - Static DUN preparation;
+- Dynamic DUN preparation;
 - route anchor + runtime transform bridge;
 - generated mesh/collider pipeline;
-- подготовка перехода к Dynamic DUN.
+- подготовка перехода к Dynamic DUN;
+- будущий quaternion transform для Dynamic DUN.
 
 **Результат:**  
-DUN становится не первым фундаментом проекта, а следующим уровнем поверх проверенной topology/mapping/lab-основы.
+DUN становится следующим runtime/container-уровнем поверх проверенной topology/mapping/lab/object-основы.
 
-## 🧩 Phase 4 — EQ / HAOS / Runtime Orchestration
+---
+
+## 🧩 Phase 5 — EQ / HAOS / Runtime Orchestration
 
 **Цель:**  
-перейти от lab sandbox к более явной системе runtime-оркестрации.
+перейти от lab sandbox и DUN stage к более явной системе runtime-оркестрации.
 
 **Содержание:**
 
@@ -142,7 +186,7 @@ DUN становится не первым фундаментом проекта
 
 ---
 
-## 🧩 Phase 5 — Stable Research Build
+## 🧩 Phase 6 — Stable Research Build
 
 **Цель:**  
 подготовить Arden Engine к открытым R&D-экспериментам и публикации.
@@ -157,6 +201,7 @@ DUN становится не первым фундаментом проекта
 
 **Результат:**  
 Arden Engine готов к открытым R&D-экспериментам, демонстрации и дальнейшему open-collab развитию.
+
 
 ---
 
